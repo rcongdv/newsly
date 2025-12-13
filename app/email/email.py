@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+from datetime import datetime, timezone, timedelta
+
 
 from app.email.gmail_auth import GmailAuth
 from googleapiclient.discovery import build
@@ -51,13 +53,14 @@ class Email:
                 .execute()
             )
 
-            print(f"Gmail watch established. Expires: {response.get('expiration')}")
+            expiration_ms = int(response.get('expiration'))
+            expiration_pst = datetime.fromtimestamp(expiration_ms / 1000, tz=timezone(timedelta(hours=-8)))
+            print(f"Gmail watch established. Expires: {expiration_pst.strftime('%Y-%m-%d %I:%M:%S %p PST')}")
 
             return {
                 "status": "Watch established",
                 "topic": self.PUBSUB_TOPIC_NAME,
                 "details": response,
-                "next_step": f"Ensure Pub/Sub subscription is set to push to your webhook: /api/v1/pubsub/webhook",
             }
 
         except HttpError as e:

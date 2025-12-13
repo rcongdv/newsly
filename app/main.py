@@ -43,7 +43,7 @@ async def process_email_webhook(request: Request):
         email = email_service.process_email_webhook()
 
         logger.info(email)
-        return {"message": "Email webhook received and processed."}
+        return {"message": "Email webhook received and processed.", "email": email}
     except Exception as e:
         logger.error(f"Error processing email webhook: {e}")
         return {"error": "Failed to process email webhook."}, 500
