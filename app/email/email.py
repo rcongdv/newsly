@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 import os
@@ -124,8 +125,48 @@ class Email:
                 elif header["name"] == "Date":
                     email_info["date"] = header["value"]
 
+            # Extract email body (HTML preferred, fallback to plain text)
+            body_html, body_text = self._extract_body(message["payload"])
+            email_info["body_html"] = body_html
+            email_info["body_text"] = body_text
+
             return email_info
 
         except HttpError as e:
             print(f"Error fetching email: {e}")
             raise
+
+    def _extract_body(self, payload: dict) -> tuple[str | None, str | None]:
+        """
+        Extract HTML and plain text body from email payload.
+        Returns (body_html, body_text) tuple.
+        """
+        body_html = None
+        body_text = None
+
+        def decode_body(data: str) -> str:
+            """Decode base64url encoded body data."""
+            return base64.urlsafe_b64decode(data).decode("utf-8")
+
+        def find_parts(part: dict):
+            """Recursively find text/html and text/plain parts."""
+            nonlocal body_html, body_text
+
+            mime_type = part.get("mimeType", "")
+
+            # Check if this part has body data
+            body = part.get("body", {})
+            data = body.get("data")
+
+            if data:
+                if mime_type == "text/html":
+                    body_html = decode_body(data)
+                elif mime_type == "text/plain":
+                    body_text = decode_body(data)
+
+            # Recursively check nested parts
+            for sub_part in part.get("parts", []):
+                find_parts(sub_part)
+
+        find_parts(payload)
+        return body_html, body_text
