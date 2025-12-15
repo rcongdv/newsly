@@ -1,7 +1,9 @@
 import base64
+from email.utils import parsedate_to_datetime
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone, timedelta
 
 
@@ -119,11 +121,13 @@ class Email:
 
             for header in headers:
                 if header["name"] == "From":
-                    email_info["from"] = header["value"]
+                    sender_name, sender_email = self._parse_sender(header["value"])
+                    email_info["sender_name"] = sender_name
+                    email_info["sender_email"] = sender_email
                 elif header["name"] == "Subject":
                     email_info["subject"] = header["value"]
                 elif header["name"] == "Date":
-                    email_info["date"] = header["value"]
+                    email_info["date"] = self._parse_date(header["value"])
 
             # Extract email body (HTML preferred, fallback to plain text)
             body_html, body_text = self._extract_body(message["payload"])
@@ -170,3 +174,40 @@ class Email:
 
         find_parts(payload)
         return body_html, body_text
+
+    def _parse_sender(self, from_header: str) -> tuple[str | None, str | None]:
+        """
+        Parse the From header into name and email.
+        Handles formats like:
+        - "John Doe <john@example.com>"
+        - "<john@example.com>"
+        - "john@example.com"
+        """
+        if not from_header:
+            return None, None
+
+        # Match "Name <email>" or "<email>" format
+        match = re.match(r'^(?:"?([^"<]*)"?\s*)?<([^>]+)>$', from_header.strip())
+        if match:
+            name = match.group(1).strip() if match.group(1) else None
+            email = match.group(2).strip()
+            return name, email
+
+        # Plain email address
+        if "@" in from_header:
+            return None, from_header.strip()
+
+        return None, None
+
+    def _parse_date(self, date_header: str) -> datetime | None:
+        """
+        Parse RFC 2822 date header into datetime object.
+        Example: "Sat, 14 Dec 2024 10:30:00 +0000"
+        """
+        if not date_header:
+            return None
+
+        try:
+            return parsedate_to_datetime(date_header)
+        except Exception:
+            return None

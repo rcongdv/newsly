@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,16 +13,18 @@ class EmailRepository:
     async def create(
         self,
         gmail_id: str,
-        sender: str | None = None,
+        sender_name: str | None = None,
+        sender_email: str | None = None,
         subject: str | None = None,
         snippet: str | None = None,
         body_html: str | None = None,
         body_text: str | None = None,
-        email_date: str | None = None,
+        email_date: datetime | None = None,
     ) -> Email:
         email = Email(
             gmail_id=gmail_id,
-            sender=sender,
+            sender_name=sender_name,
+            sender_email=sender_email,
             subject=subject,
             snippet=snippet,
             body_html=body_html,
@@ -55,12 +59,13 @@ class EmailRepository:
     async def create_if_not_exists(
         self,
         gmail_id: str,
-        sender: str | None = None,
+        sender_name: str | None = None,
+        sender_email: str | None = None,
         subject: str | None = None,
         snippet: str | None = None,
         body_html: str | None = None,
         body_text: str | None = None,
-        email_date: str | None = None,
+        email_date: datetime | None = None,
     ) -> tuple[Email, bool]:
         """
         Create email if it doesn't exist.
@@ -72,7 +77,8 @@ class EmailRepository:
 
         email = await self.create(
             gmail_id=gmail_id,
-            sender=sender,
+            sender_name=sender_name,
+            sender_email=sender_email,
             subject=subject,
             snippet=snippet,
             body_html=body_html,

@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 
 from app.email.email import get_email_service
 from app.db import init_db, async_session, EmailRepository
+from app.ai.grok import get_grok_service
 
 
 logging.basicConfig(level=logging.INFO)
@@ -36,7 +37,7 @@ def health_check():
     return {"status": "healthy"}
 
 
-@app.post("/api/v1/email/webhook")
+@app.post("/api/v1/email/new")
 async def process_email_webhook(request: Request):
     try:
         data = await request.json()
@@ -51,17 +52,27 @@ async def process_email_webhook(request: Request):
                 repo = EmailRepository(session)
                 db_email, created = await repo.create_if_not_exists(
                     gmail_id=latest_email.get("id"),
-                    sender=latest_email.get("from"),
+                    sender_name=latest_email.get("sender_name"),
+                    sender_email=latest_email.get("sender_email"),
                     subject=latest_email.get("subject"),
                     snippet=latest_email.get("snippet"),
                     body_html=latest_email.get("body_html"),
                     body_text=latest_email.get("body_text"),
                     email_date=latest_email.get("date"),
                 )
-                logger.info(f"Email {'created' if created else 'already exists'}: {db_email.gmail_id}")
+                logger.info(
+                    f"Email {'created' if created else 'already exists'}: {db_email.gmail_id}"
+                )
 
-        logger.info(result)
-        return {"message": "Email webhook received and processed.", "email": result}
+        grok = get_grok_service()
+        prompt = f"{latest_email.get('body_html')}"
+        response = grok.prompt(prompt)
+
+        return {
+            "message": "Email webhook received and processed.",
+            "email": result,
+            "grok_response": response,
+        }
     except Exception as e:
         logger.error(f"Error processing email webhook: {e}")
         return {"error": "Failed to process email webhook."}, 500
