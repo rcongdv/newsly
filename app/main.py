@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request
 from app.email.email import get_email_service
 from app.db import init_db, async_session, EmailRepository
 from app.ai.grok import get_grok_service
+from app.ai.elevenlabs import get_elevenlabs_service
 
 
 logging.basicConfig(level=logging.INFO)
@@ -27,11 +28,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-@app.get("/")
-def read_root():
-    return {"message": "TEST123"}
-
-
 @app.get("/api/v1/health")
 def health_check():
     return {"status": "healthy"}
@@ -47,6 +43,12 @@ async def process_email_webhook(request: Request):
         result = email_service.process_email_webhook()
 
         latest_email = result.get("latest_email")
+
+        grok = get_grok_service()
+        prompt = f"{latest_email.get('body_html')}"
+        response = grok.prompt(prompt)
+        logger.info(f"Grok response: {response}")
+
         if latest_email:
             async with async_session() as session:
                 repo = EmailRepository(session)
@@ -58,15 +60,23 @@ async def process_email_webhook(request: Request):
                     snippet=latest_email.get("snippet"),
                     body_html=latest_email.get("body_html"),
                     body_text=latest_email.get("body_text"),
+                    ai_summary=response,
                     email_date=latest_email.get("date"),
                 )
                 logger.info(
                     f"Email {'created' if created else 'already exists'}: {db_email.gmail_id}"
                 )
 
-        grok = get_grok_service()
-        prompt = f"{latest_email.get('body_html')}"
-        response = grok.prompt(prompt)
+        elevenlabs = get_elevenlabs_service()
+        tts_audio = elevenlabs.text_to_speech(
+            text=response,
+            voice_id="21m00Tcm4TlvDq8ikWAM",
+            model_id="eleven_monolingual_v1",
+            output_format="mp3",
+        )
+        with open("output.mp3", "wb") as audio_file:
+            audio_file.write(tts_audio)
+            logger.info("Text-to-speech audio saved as output.mp3")
 
         return {
             "message": "Email webhook received and processed.",

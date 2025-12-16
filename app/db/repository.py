@@ -19,6 +19,7 @@ class EmailRepository:
         snippet: str | None = None,
         body_html: str | None = None,
         body_text: str | None = None,
+        ai_summary: str | None = None,
         email_date: datetime | None = None,
     ) -> Email:
         email = Email(
@@ -29,6 +30,7 @@ class EmailRepository:
             snippet=snippet,
             body_html=body_html,
             body_text=body_text,
+            ai_summary=ai_summary,
             email_date=email_date,
         )
         self.session.add(email)
@@ -65,6 +67,7 @@ class EmailRepository:
         snippet: str | None = None,
         body_html: str | None = None,
         body_text: str | None = None,
+        ai_summary: str | None = None,
         email_date: datetime | None = None,
     ) -> tuple[Email, bool]:
         """
@@ -83,6 +86,7 @@ class EmailRepository:
             snippet=snippet,
             body_html=body_html,
             body_text=body_text,
+            ai_summary=ai_summary,
             email_date=email_date,
         )
         return email, True
