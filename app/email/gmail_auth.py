@@ -10,23 +10,26 @@ dotenv.load_dotenv()
 
 class GmailAuth:
 
-    CLIENT_ID = os.getenv("GOOGLE_AUTH_CLIENT_ID")
-    CLIENT_SECRET = os.getenv("GOOGLE_AUTH_CLIENT_SECRET")
-    REFRESH_TOKEN = os.getenv("GOOGLE_AUTH_REFRESH_TOKEN")
-
     def __init__(self):
-        if not all([self.CLIENT_ID, self.CLIENT_SECRET, self.REFRESH_TOKEN]):
+        self.client_id = os.getenv("GOOGLE_AUTH_CLIENT_ID")
+        self.client_secret = os.getenv("GOOGLE_AUTH_CLIENT_SECRET")
+        self.refresh_token = os.getenv("GOOGLE_AUTH_REFRESH_TOKEN")
+
+        if not all([self.client_id, self.client_secret, self.refresh_token]):
             raise ValueError(
                 "Missing required GOOGLE_ environment variables. Cannot initialize GoogleAuthService."
             )
 
         self._credentials = Credentials(
             token=None,
-            refresh_token=self.REFRESH_TOKEN,
+            refresh_token=self.refresh_token,
             token_uri="https://oauth2.googleapis.com/token",
-            client_id=self.CLIENT_ID,
-            client_secret=self.CLIENT_SECRET,
-            scopes=["https://www.googleapis.com/auth/gmail.readonly"],
+            client_id=self.client_id,
+            client_secret=self.client_secret,
+            scopes=[
+                "https://www.googleapis.com/auth/gmail.readonly",
+                "https://www.googleapis.com/auth/gmail.send",
+            ],
         )
 
     def get_credentials(self) -> Credentials:

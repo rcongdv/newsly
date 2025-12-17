@@ -1,15 +1,20 @@
 import logging
+import sys
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 
-from app.email.email import get_email_service
-from app.db import init_db, async_session, EmailRepository
-from app.ai.grok import get_grok_service
-from app.ai.elevenlabs import get_elevenlabs_service
+from app.db import get_database, EmailRepository
+from app.email import get_email_service
+from app.ai import get_grok_service, get_elevenlabs_service
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+logging.getLogger().handlers[0].flush = sys.stdout.flush
 logger = logging.getLogger(__name__)
 
 
@@ -17,7 +22,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     logger.info("Starting up...")
     logger.info("Initializing database...")
-    await init_db()
+    await get_database().init_db()
     logger.info("Database initialized.")
 
     yield
@@ -34,13 +39,13 @@ def health_check():
 
 
 @app.post("/api/v1/email/new")
-async def process_email_webhook(request: Request):
+async def process_new_email(request: Request):
     try:
         data = await request.json()
-        logger.info(f"Received webhook data: {data}")
+        logger.info(f"Endpoint called, data: {data}")
 
         email_service = get_email_service()
-        result = email_service.process_email_webhook()
+        result = email_service.process_new_email()
 
         latest_email = result.get("latest_email")
 
@@ -50,7 +55,7 @@ async def process_email_webhook(request: Request):
         logger.info(f"Grok response: {response}")
 
         if latest_email:
-            async with async_session() as session:
+            async with get_database().async_session() as session:
                 repo = EmailRepository(session)
                 db_email, created = await repo.create_if_not_exists(
                     gmail_id=latest_email.get("id"),
@@ -60,7 +65,7 @@ async def process_email_webhook(request: Request):
                     snippet=latest_email.get("snippet"),
                     body_html=latest_email.get("body_html"),
                     body_text=latest_email.get("body_text"),
-                    ai_summary=response,
+                    ai_summary=response.content,
                     email_date=latest_email.get("date"),
                 )
                 logger.info(
@@ -69,23 +74,24 @@ async def process_email_webhook(request: Request):
 
         elevenlabs = get_elevenlabs_service()
         tts_audio = elevenlabs.text_to_speech(
-            text=response,
-            voice_id="21m00Tcm4TlvDq8ikWAM",
-            model_id="eleven_monolingual_v1",
-            output_format="mp3",
+            text=response.content,
+            output_format="mp3_44100_128",
         )
         with open("output.mp3", "wb") as audio_file:
             audio_file.write(tts_audio)
-            logger.info("Text-to-speech audio saved as output.mp3")
+        logger.info("Text-to-speech audio saved as output.mp3")
 
-        return {
-            "message": "Email webhook received and processed.",
-            "email": result,
-            "grok_response": response,
-        }
+        email_service.send_email(
+            to="richardcong635@gmail.com",
+            subject=latest_email.get("subject"),
+            body_text=response.content,
+            attachments=["output.mp3"],
+        )
+
+        return {"message": "New email received and processed"}
     except Exception as e:
-        logger.error(f"Error processing email webhook: {e}")
-        return {"error": "Failed to process email webhook."}, 500
+        logger.error(f"Error processing new email: {e}")
+        return {"error": "Failed to process new email"}, 500
 
 
 if __name__ == "__main__":

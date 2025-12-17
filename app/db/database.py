@@ -3,32 +3,35 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.orm import DeclarativeBase
 
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://localhost/newsly")
-
-# Handle Fly.io style postgres:// URLs
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
-elif DATABASE_URL.startswith("postgresql://") and "+asyncpg" not in DATABASE_URL:
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
-
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=False,
-    connect_args={"ssl": False},
-)
-
-async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-
 class Base(DeclarativeBase):
     pass
 
 
-async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+class Database:
+
+    def __init__(self):
+        database_url = os.getenv("DATABASE_URL")
+        self.engine = create_async_engine(
+            database_url,
+            echo=False,
+        )
+        self.async_session = async_sessionmaker(
+            self.engine, class_=AsyncSession, expire_on_commit=False
+        )
+
+    async def init_db(self):
+        async with self.engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
+    def get_session(self) -> async_sessionmaker[AsyncSession]:
+        return self.async_session
 
 
-async def get_db() -> AsyncSession:
-    async with async_session() as session:
-        yield session
+_database: Database | None = None
+
+
+def get_database() -> Database:
+    global _database
+    if _database is None:
+        _database = Database()
+    return _database

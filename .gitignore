@@ -1,5 +1,6 @@
 .env
 *.json
+*.mp3
 
 venv/
 __pycache__/
