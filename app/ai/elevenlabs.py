@@ -2,7 +2,6 @@ import logging
 import os
 
 from elevenlabs.client import ElevenLabs
-from elevenlabs.play import play
 
 logger = logging.getLogger(__name__)
 

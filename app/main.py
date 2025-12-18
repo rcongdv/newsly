@@ -49,14 +49,20 @@ async def process_new_email(request: Request):
 
         latest_email = result.get("latest_email")
 
-        grok = get_grok_service()
-        prompt = f"{latest_email.get('body_html')}"
-        response = grok.prompt(prompt)
-        logger.info(f"Grok response: {response}")
+        async with get_database().async_session() as session:
+            repo = EmailRepository(session)
 
-        if latest_email:
-            async with get_database().async_session() as session:
-                repo = EmailRepository(session)
+            if latest_email and latest_email.get("id"):
+
+                if await repo.get_by_gmail_id(latest_email.get("id")):
+                    logger.info(f"Email already exists in DB: {latest_email.get('id')}")
+                    return {"message": "Email already processed"}
+
+                grok = get_grok_service()
+                prompt = f"{latest_email.get('body_html')}"
+                response = grok.prompt(prompt)
+                logger.info(f"Grok response: {response}")
+
                 db_email, created = await repo.create_if_not_exists(
                     gmail_id=latest_email.get("id"),
                     sender_name=latest_email.get("sender_name"),
@@ -72,23 +78,25 @@ async def process_new_email(request: Request):
                     f"Email {'created' if created else 'already exists'}: {db_email.gmail_id}"
                 )
 
-        elevenlabs = get_elevenlabs_service()
-        tts_audio = elevenlabs.text_to_speech(
-            text=response.content,
-            output_format="mp3_44100_128",
-        )
-        with open("output.mp3", "wb") as audio_file:
-            audio_file.write(tts_audio)
-        logger.info("Text-to-speech audio saved as output.mp3")
+                elevenlabs = get_elevenlabs_service()
+                tts_audio = elevenlabs.text_to_speech(
+                    text=response.content,
+                    output_format="mp3_44100_128",
+                )
+                with open("output.mp3", "wb") as audio_file:
+                    audio_file.write(tts_audio)
+                logger.info("Text-to-speech audio saved as output.mp3")
 
-        email_service.send_email(
-            to="richardcong635@gmail.com",
-            subject=latest_email.get("subject"),
-            body_text=response.content,
-            attachments=["output.mp3"],
-        )
+                email_service.send_email(
+                    to="richardcong635@gmail.com",
+                    subject=latest_email.get("subject"),
+                    body_text=response.content,
+                    attachments=["output.mp3"],
+                )
 
-        return {"message": "New email received and processed"}
+                return {"message": "New email received and processed"}
+
+            return {"message": "No email to process"}
     except Exception as e:
         logger.error(f"Error processing new email: {e}")
         return {"error": "Failed to process new email"}, 500
