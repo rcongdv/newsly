@@ -11,9 +11,23 @@ class Database:
 
     def __init__(self):
         database_url = os.getenv("DATABASE_URL")
+
+        # Convert postgres:// to postgresql+asyncpg:// for SQLAlchemy async
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif database_url.startswith("postgresql://"):
+            database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+        # For Fly.io internal connections, disable SSL
+        connect_args = {}
+        if os.getenv("FLY_APP_NAME"):
+            # Running on Fly - use internal network without SSL
+            connect_args["ssl"] = False
+
         self.engine = create_async_engine(
             database_url,
             echo=False,
+            connect_args=connect_args,
         )
         self.async_session = async_sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False
