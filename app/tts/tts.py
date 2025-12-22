@@ -1,5 +1,7 @@
-from app.tts.elevenlabs import text_to_speech
-from app.tts.pytts import text_to_speech
+import os
+
+from app.tts.elevenlabs import text_to_speech as elevenlabs_tts
+from app.tts.pytts import text_to_speech as pytts_tts
 
 
 class TTSServiceFactory:
@@ -7,10 +9,11 @@ class TTSServiceFactory:
     @staticmethod
     def _get_service(service_name: str):
         if service_name == "elevenlabs":
-            return text_to_speech
+            return elevenlabs_tts
         else:
-            return text_to_speech
+            return pytts_tts
         
-    def text_to_speech(self, service_name: str, text: str):
+    def text_to_speech(self, text: str):
+        service_name = os.getenv("TTS_VENDOR")
         service = self._get_service(service_name)
-        return service.text_to_speech(text)
+        return service(text)

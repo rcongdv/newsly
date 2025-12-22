@@ -78,7 +78,7 @@ async def process_new_email(request: Request):
                     f"Email {'created' if created else 'already exists'}: {db_email.gmail_id}"
                 )
 
-                TTSServiceFactory.text_to_speech("pytts", response.content)
+                TTSServiceFactory.text_to_speech(response.content)
 
                 email_service.send_email(
                     to="richardcong635@gmail.com",
