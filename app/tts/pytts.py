@@ -1,0 +1,33 @@
+import logging
+import os
+import pyttsx3
+
+logger = logging.getLogger(__name__)
+
+
+def text_to_speech(text):
+    pytts_service = _get_pytts_service()
+    pytts_service.text_to_speech(text=text)
+
+def _get_pytts_service():
+    global pytts_service
+    if pytts_service is None:
+        pytts_service = PyTTSService()
+    return pytts_service
+
+
+class PyTTSService:
+
+    def __init__(self):
+        self.pytts_service = pyttsx3.init()
+        self.pytts_service.setProperty("rate", int(os.getenv("PYTTS_VOICE_RATE")))
+        self.pytts_service.setProperty("volume", float(os.getenv("PYTTS_VOLUME")))
+        self.pytts_service.setProperty("voice", self.pytts_service.getProperty('voices')[int(os.getenv("PYTTS_VOICE_ID"))].id)
+        self.output_file = os.getenv("TTS_OUTPUT_FILE")
+        self.output_format = os.getenv("TTS_OUTPUT_FORMAT")
+        
+    def text_to_speech(self, text: str):
+        logger.info("Generating TTS audio with PyTTS")
+        self.pytts_service.save_to_file(text, f"{self.output_file}.{self.output_format}")
+        self.pytts_service.runAndWait()
+        self.pytts_service.stop()

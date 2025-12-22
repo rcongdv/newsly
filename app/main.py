@@ -6,8 +6,8 @@ from fastapi import FastAPI, Request
 
 from app.db import get_database, EmailRepository
 from app.email import get_email_service
-from app.ai import get_grok_service, get_elevenlabs_service
-
+from app.ai import get_grok_service
+from app.tts.tts import TTSServiceFactory
 
 logging.basicConfig(
     level=logging.INFO,
@@ -78,14 +78,7 @@ async def process_new_email(request: Request):
                     f"Email {'created' if created else 'already exists'}: {db_email.gmail_id}"
                 )
 
-                elevenlabs = get_elevenlabs_service()
-                tts_audio = elevenlabs.text_to_speech(
-                    text=response.content,
-                    output_format="mp3_44100_128",
-                )
-                with open("output.mp3", "wb") as audio_file:
-                    audio_file.write(tts_audio)
-                logger.info("Text-to-speech audio saved as output.mp3")
+                TTSServiceFactory.text_to_speech("pytts", response.content)
 
                 email_service.send_email(
                     to="richardcong635@gmail.com",
