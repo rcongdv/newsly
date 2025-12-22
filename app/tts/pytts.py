@@ -4,12 +4,10 @@ import pyttsx3
 
 logger = logging.getLogger(__name__)
 
+pytts_service = None
 
-def text_to_speech(text):
-    pytts_service = _get_pytts_service()
-    pytts_service.text_to_speech(text=text)
 
-def _get_pytts_service():
+def get_pytts_service():
     global pytts_service
     if pytts_service is None:
         pytts_service = PyTTSService()
