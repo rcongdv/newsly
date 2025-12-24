@@ -4,6 +4,8 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 WORKDIR /app
 
+RUN apt update
+RUN apt install espeak-ng -y
 
 RUN python -m venv .venv
 COPY requirements.txt ./

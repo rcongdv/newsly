@@ -20,7 +20,7 @@ class Database:
 
         # For Fly.io internal connections, disable SSL
         connect_args = {}
-        if os.getenv("FLY_APP_NAME"):
+        if os.getenv("FLY_APP"):
             # Running on Fly - use internal network without SSL
             connect_args["ssl"] = False
 
@@ -28,6 +28,8 @@ class Database:
             database_url,
             echo=False,
             connect_args=connect_args,
+            pool_pre_ping=True,
+            pool_recycle=1800,
         )
         self.async_session = async_sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False

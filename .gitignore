@@ -2,7 +2,7 @@
 *.json
 *.mp3
 
-venv/
+*venv/
 __pycache__/
 
 prompt.md

@@ -92,7 +92,7 @@ async def process_new_email(request: Request):
             return {"message": "No email to process"}
     except Exception as e:
         logger.error(f"Error processing new email: {e}")
-        return {"error": "Failed to process new email"}, 500
+        return {"error": "Failed to process new email", "status_code": 500}
 
 
 if __name__ == "__main__":
