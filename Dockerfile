@@ -4,15 +4,14 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 WORKDIR /app
 
-RUN apt update
-RUN apt install espeak-ng -y
-
 RUN python -m venv .venv
 COPY requirements.txt ./
 RUN .venv/bin/pip install -r requirements.txt
 FROM python:3.12.12-slim
 
 ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y espeak-ng && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY --from=builder /app/.venv .venv/
