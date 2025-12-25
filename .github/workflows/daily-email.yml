@@ -1,0 +1,18 @@
+name: Daily Email Cron
+
+on:
+  schedule:
+    # 8am PST = 16:00 UTC
+    - cron: '0 16 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger email send
+        run: |
+          curl -X POST "https://newsly.fly.dev/api/v1/email/send?period=morning" \
+            --fail \
+            --silent \
+            --show-error
