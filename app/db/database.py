@@ -20,16 +20,15 @@ class Database:
 
         # Convert postgres:// to postgresql+asyncpg:// for SQLAlchemy async
         if database_url.startswith("postgres://"):
-            database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+            database_url = database_url.replace(
+                "postgres://", "postgresql+asyncpg://", 1
+            )
         elif database_url.startswith("postgresql://"):
-            database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            database_url = database_url.replace(
+                "postgresql://", "postgresql+asyncpg://", 1
+            )
 
-        # For Fly.io internal connections, disable SSL
-        connect_args = {}
-        if settings.fly_app:
-            # Running on Fly - use internal network without SSL
-            connect_args["ssl"] = False
-            connect_args["command_timeout"] = 60
+        connect_args = {"command_timeout": 60}
 
         self.engine = create_async_engine(
             database_url,
@@ -60,7 +59,9 @@ class Database:
                     await asyncio.sleep(retry_delay)
                     retry_delay *= 1.5
                 else:
-                    logger.error(f"Failed to connect to database after {max_retries} attempts")
+                    logger.error(
+                        f"Failed to connect to database after {max_retries} attempts"
+                    )
                     raise
 
     def get_session(self) -> async_sessionmaker[AsyncSession]:

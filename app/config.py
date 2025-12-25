@@ -37,9 +37,6 @@ class Settings(BaseSettings):
     # Database
     database_url: str
 
-    # Fly.io
-    fly_app: bool = False
-
     # Other
     time_frames: dict = {
         "morning": ("00:00:00", "6:45:00"),

@@ -44,7 +44,7 @@ def health_check():
 async def process_new_email(request: Request):
     try:
         data = await request.json()
-        logger.info(f"Endpoint called, data: {data}")
+        logger.info(f"Received new email: {data}")
 
         email_service = get_email_service()
         result = email_service.process_new_email()
@@ -71,8 +71,10 @@ async def process_new_email(request: Request):
 @app.post("/api/v1/email/send")
 async def trigger_grok(request: Request):
     try:
-        settings = get_settings()
         period = request.query_params.get("period", "morning")
+        logger.info(f"Triggering email sending for period: {period}")
+
+        settings = get_settings()
         time_frame = settings.time_frames.get(period)
         time_format = settings.time_format
 
