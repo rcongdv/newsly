@@ -8,13 +8,13 @@ class TestGrok:
     @patch("app.ai.grok.system")
     @patch("app.ai.grok.Client")
     @patch("app.ai.grok.Path")
-    @patch("app.ai.grok.os.getenv")
-    def test_init_success(self, mock_getenv, mock_path, mock_client, mock_system):
+    @patch("app.ai.grok.get_settings")
+    def test_init_success(self, mock_get_settings, mock_path, mock_client, mock_system):
         """Test successful initialization of Grok class."""
-        mock_getenv.side_effect = lambda key, default=None: {
-            "GROK_API_KEY": "test-api-key",
-            "GROK_MODEL": "test-model"
-        }.get(key, default)
+        mock_settings = MagicMock()
+        mock_settings.grok_api_key = "test-api-key"
+        mock_settings.grok_model = "test-model"
+        mock_get_settings.return_value = mock_settings
 
         mock_prompt_path = MagicMock()
         mock_prompt_path.exists.return_value = True
@@ -30,13 +30,13 @@ class TestGrok:
         mock_client.return_value.chat.create.assert_called_once()
         assert grok.chat == mock_chat
 
-    @patch("app.ai.grok.os.getenv")
-    def test_init_missing_api_key(self, mock_getenv):
+    @patch("app.ai.grok.get_settings")
+    def test_init_missing_api_key(self, mock_get_settings):
         """Test that initialization raises ValueError when API key is missing."""
-        mock_getenv.side_effect = lambda key, default=None: {
-            "GROK_API_KEY": None,
-            "GROK_MODEL": "test-model"
-        }.get(key, default)
+        mock_settings = MagicMock()
+        mock_settings.grok_api_key = ""
+        mock_settings.grok_model = "test-model"
+        mock_get_settings.return_value = mock_settings
 
         with pytest.raises(ValueError, match="Missing required GROK_API_KEY"):
             grok_module.Grok()
@@ -44,13 +44,13 @@ class TestGrok:
     @patch("app.ai.grok.system")
     @patch("app.ai.grok.Client")
     @patch("app.ai.grok.Path")
-    @patch("app.ai.grok.os.getenv")
-    def test_prompt(self, mock_getenv, mock_path, mock_client, mock_system):
+    @patch("app.ai.grok.get_settings")
+    def test_prompt(self, mock_get_settings, mock_path, mock_client, mock_system):
         """Test the prompt method sends message and returns response."""
-        mock_getenv.side_effect = lambda key, default=None: {
-            "GROK_API_KEY": "test-api-key",
-            "GROK_MODEL": "test-model"
-        }.get(key, default)
+        mock_settings = MagicMock()
+        mock_settings.grok_api_key = "test-api-key"
+        mock_settings.grok_model = "test-model"
+        mock_get_settings.return_value = mock_settings
 
         mock_prompt_path = MagicMock()
         mock_prompt_path.exists.return_value = True
@@ -71,13 +71,13 @@ class TestGrok:
     @patch("app.ai.grok.system")
     @patch("app.ai.grok.Client")
     @patch("app.ai.grok.Path")
-    @patch("app.ai.grok.os.getenv")
-    def test_prompt_appends_to_chat(self, mock_getenv, mock_path, mock_client, mock_system):
+    @patch("app.ai.grok.get_settings")
+    def test_prompt_appends_to_chat(self, mock_get_settings, mock_path, mock_client, mock_system):
         """Test that prompt appends messages to chat."""
-        mock_getenv.side_effect = lambda key, default=None: {
-            "GROK_API_KEY": "test-api-key",
-            "GROK_MODEL": "test-model"
-        }.get(key, default)
+        mock_settings = MagicMock()
+        mock_settings.grok_api_key = "test-api-key"
+        mock_settings.grok_model = "test-model"
+        mock_get_settings.return_value = mock_settings
 
         mock_prompt_path = MagicMock()
         mock_prompt_path.exists.return_value = True
@@ -104,13 +104,13 @@ class TestGetGrokService:
     @patch("app.ai.grok.system")
     @patch("app.ai.grok.Client")
     @patch("app.ai.grok.Path")
-    @patch("app.ai.grok.os.getenv")
-    def test_get_grok_service_creates_instance(self, mock_getenv, mock_path, mock_client, mock_system):
+    @patch("app.ai.grok.get_settings")
+    def test_get_grok_service_creates_instance(self, mock_get_settings, mock_path, mock_client, mock_system):
         """Test that get_grok_service creates a new Grok instance."""
-        mock_getenv.side_effect = lambda key, default=None: {
-            "GROK_API_KEY": "test-api-key",
-            "GROK_MODEL": "test-model"
-        }.get(key, default)
+        mock_settings = MagicMock()
+        mock_settings.grok_api_key = "test-api-key"
+        mock_settings.grok_model = "test-model"
+        mock_get_settings.return_value = mock_settings
 
         mock_prompt_path = MagicMock()
         mock_prompt_path.exists.return_value = True
@@ -128,13 +128,13 @@ class TestGetGrokService:
     @patch("app.ai.grok.system")
     @patch("app.ai.grok.Client")
     @patch("app.ai.grok.Path")
-    @patch("app.ai.grok.os.getenv")
-    def test_get_grok_service_returns_singleton(self, mock_getenv, mock_path, mock_client, mock_system):
+    @patch("app.ai.grok.get_settings")
+    def test_get_grok_service_returns_singleton(self, mock_get_settings, mock_path, mock_client, mock_system):
         """Test that get_grok_service returns the same instance on subsequent calls."""
-        mock_getenv.side_effect = lambda key, default=None: {
-            "GROK_API_KEY": "test-api-key",
-            "GROK_MODEL": "test-model"
-        }.get(key, default)
+        mock_settings = MagicMock()
+        mock_settings.grok_api_key = "test-api-key"
+        mock_settings.grok_model = "test-model"
+        mock_get_settings.return_value = mock_settings
 
         mock_prompt_path = MagicMock()
         mock_prompt_path.exists.return_value = True

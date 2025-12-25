@@ -1,8 +1,9 @@
 import asyncio
 import logging
-import os
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
+
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,8 @@ class Base(DeclarativeBase):
 class Database:
 
     def __init__(self):
-        database_url = os.getenv("DATABASE_URL")
+        settings = get_settings()
+        database_url = settings.database_url
 
         # Convert postgres:// to postgresql+asyncpg:// for SQLAlchemy async
         if database_url.startswith("postgres://"):
@@ -24,7 +26,7 @@ class Database:
 
         # For Fly.io internal connections, disable SSL
         connect_args = {}
-        if os.getenv("FLY_APP"):
+        if settings.fly_app:
             # Running on Fly - use internal network without SSL
             connect_args["ssl"] = False
             connect_args["command_timeout"] = 60

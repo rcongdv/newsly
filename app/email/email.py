@@ -7,11 +7,11 @@ from email import encoders
 import json
 import logging
 import mimetypes
-import os
 import re
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from app.config import get_settings
 from app.email.gmail_auth import GmailAuth
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -34,7 +34,8 @@ class Email:
     USER_ID = "me"
 
     def __init__(self):
-        self.pubsub_topic_name = os.getenv("GMAIL_PUBSUB_TOPIC_NAME")
+        settings = get_settings()
+        self.pubsub_topic_name = settings.gmail_pubsub_topic_name
         self._auth = GmailAuth()
         self.watch()
 

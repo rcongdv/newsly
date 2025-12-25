@@ -1,9 +1,11 @@
 import logging
 import sys
 import uvicorn
+from datetime import date, time, datetime, timedelta
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 
+from app.config import get_settings
 from app.db import get_database, EmailRepository
 from app.email import get_email_service
 from app.ai import get_grok_service
@@ -58,41 +60,56 @@ async def process_new_email(request: Request):
                     logger.info(f"Email already exists in DB: {latest_email.get('id')}")
                     return {"message": "Email already processed"}
 
-                grok = get_grok_service()
-                prompt = f"{latest_email.get('body_html')}"
-                response = grok.prompt(prompt)
-                logger.info(f"Grok response: {response}")
-
-                db_email, created = await repo.create_if_not_exists(
-                    gmail_id=latest_email.get("id"),
-                    sender_name=latest_email.get("sender_name"),
-                    sender_email=latest_email.get("sender_email"),
-                    subject=latest_email.get("subject"),
-                    snippet=latest_email.get("snippet"),
-                    body_html=latest_email.get("body_html"),
-                    body_text=latest_email.get("body_text"),
-                    ai_summary=response.content,
-                    email_date=latest_email.get("date"),
-                )
-                logger.info(
-                    f"Email {'created' if created else 'already exists'}: {db_email.gmail_id}"
-                )
-
-                TTSServiceFactory.text_to_speech(response.content)
-
-                email_service.send_email(
-                    to="richardcong635@gmail.com",
-                    subject=latest_email.get("subject"),
-                    body_text=response.content,
-                    attachments=["output.mp3"],
-                )
-
                 return {"message": "New email received and processed"}
 
             return {"message": "No email to process"}
     except Exception as e:
         logger.error(f"Error processing new email: {e}")
         return {"error": "Failed to process new email", "status_code": 500}
+
+
+@app.post("/api/v1/email/send")
+async def trigger_grok(request: Request):
+    try:
+        settings = get_settings()
+        period = request.query_params.get("period", "morning")
+        time_frame = settings.time_frames.get(period)
+        time_format = settings.time_format
+
+        async with get_database().async_session() as session:
+            repo = EmailRepository(session)
+
+            start_date = datetime.combine(
+                date.today(), datetime.strptime(time_frame[0], time_format).time()
+            )
+            end_date = datetime.combine(
+                date.today(), datetime.strptime(time_frame[1], time_format).time()
+            )
+            emails = await repo.get_by_date_range(
+                start_date=start_date, end_date=end_date
+            )
+
+            emails_text = "\n\nNEXT EMAIL:\n\n".join(
+                email.body_html for email in emails
+            )
+
+            grok = get_grok_service()
+            response = grok.prompt(emails_text)
+
+            TTSServiceFactory.text_to_speech(response.content)
+
+            email_service = get_email_service()
+
+            email_service.send_email(
+                to="richardcong635@gmail.com",
+                subject="",
+                body_text=response.content,
+                attachments=[settings.tts_output_path],
+            )
+        return {"message": "Email sending triggered"}
+    except Exception as e:
+        logger.error(f"Error triggering email sending: {e}")
+        return {"error": "Failed to trigger email sending", "status_code": 500}
 
 
 if __name__ == "__main__":

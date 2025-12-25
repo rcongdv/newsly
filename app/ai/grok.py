@@ -1,9 +1,10 @@
 import logging
-import os
 from pathlib import Path
 
 from xai_sdk import Client
 from xai_sdk.chat import user, system
+
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +21,12 @@ def get_grok_service():
 class Grok:
 
     def __init__(self):
-        self.api_key = os.getenv("GROK_API_KEY")
-        self.model = os.getenv("GROK_MODEL", "grok-3-mini")
+        settings = get_settings()
+        self.api_key = settings.grok_api_key
+        self.model = settings.grok_model
 
         prompt_path = Path(__file__).parent / "system_prompt.md"
-        if prompt_path.exists():
-            self.system_prompt = prompt_path.read_text().strip()
-        else:
-            logger.warning(f"System prompt file not found at {prompt_path}. Using default.")
-            self.system_prompt = "You are an expert AI assistant."
+        self.system_prompt = prompt_path.read_text().strip()
 
         if not self.api_key:
             raise ValueError(
@@ -40,7 +38,7 @@ class Grok:
         )
 
     def prompt(self, prompt: str) -> str:
-        logger.info(f"Sending prompt to Grok API: {prompt}")
+        logger.info(f"Sending prompt to Grok API")
         self.chat.append(user(prompt))
         response = self.chat.sample()
         logger.info(f"Received response from Grok API: {response}")

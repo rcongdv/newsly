@@ -1,24 +1,17 @@
-import dotenv
-import os
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from google.auth.exceptions import RefreshError
 
-
-dotenv.load_dotenv()
+from app.config import get_settings
 
 
 class GmailAuth:
 
     def __init__(self):
-        self.client_id = os.getenv("GOOGLE_AUTH_CLIENT_ID")
-        self.client_secret = os.getenv("GOOGLE_AUTH_CLIENT_SECRET")
-        self.refresh_token = os.getenv("GOOGLE_AUTH_REFRESH_TOKEN")
-
-        if not all([self.client_id, self.client_secret, self.refresh_token]):
-            raise ValueError(
-                "Missing required GOOGLE_ environment variables. Cannot initialize GoogleAuthService."
-            )
+        settings = get_settings()
+        self.client_id = settings.google_auth_client_id
+        self.client_secret = settings.google_auth_client_secret
+        self.refresh_token = settings.google_auth_refresh_token
 
         self._credentials = Credentials(
             token=None,

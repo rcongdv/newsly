@@ -48,6 +48,17 @@ class EmailRepository:
         result = await self.session.execute(select(Email).where(Email.id == email_id))
         return result.scalar_one_or_none()
 
+    async def get_by_date_range(
+        self, start_date: datetime, end_date: datetime
+    ) -> list[Email]:
+        result = await self.session.execute(
+            select(Email)
+            .where(Email.email_date >= start_date)
+            .where(Email.email_date < end_date)
+            .order_by(Email.email_date.desc())
+        )
+        return list(result.scalars().all())
+
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[Email]:
         result = await self.session.execute(
             select(Email).order_by(Email.created_at.desc()).limit(limit).offset(offset)

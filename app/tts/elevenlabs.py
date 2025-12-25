@@ -1,7 +1,8 @@
 import logging
-import os
 
 from elevenlabs.client import ElevenLabs
+
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -18,13 +19,11 @@ def get_elevenlabs_service():
 class ElevenLabsService:
 
     def __init__(self):
-        self.elevenlabs = ElevenLabs(
-            api_key=os.getenv("ELEVENLABS_API_KEY"),
-        )
-        self.voice_id = os.getenv("ELEVENLABS_VOICE_ID")
-        self.model_id = os.getenv("ELEVENLABS_MODEL_ID")
-        self.output_file = os.getenv("TTS_OUTPUT_FILE")
-        self.output_format = os.getenv("TTS_OUTPUT_FORMAT")
+        settings = get_settings()
+        self.elevenlabs = ElevenLabs(api_key=settings.elevenlabs_api_key)
+        self.voice_id = settings.elevenlabs_voice_id
+        self.model_id = settings.elevenlabs_model_id
+        self.output_path = settings.tts_output_path
 
     def text_to_speech(self, text: str):
         logger.info("Generating TTS audio with ElevenLabs")
@@ -33,8 +32,7 @@ class ElevenLabsService:
             text=text,
             voice_id=self.voice_id,
             model_id=self.model_id,
-            output_format=self.output_format,
         )
         audio_bytes = b"".join(audio_generator)
-        with open(f"{self.output_file}.{self.output_format}", "wb") as f:
+        with open(self.output_path, "wb") as f:
             f.write(audio_bytes)
