@@ -80,7 +80,7 @@ class Email:
             print(f"ERROR: {error_message}")
             raise RuntimeError(error_message) from e
 
-    def process_new_email(self):
+    def process_new_event(self):
         try:
             latest_email = self._fetch_latest_email()
 
@@ -89,7 +89,7 @@ class Email:
                 "latest_email": latest_email,
             }
         except Exception as e:
-            error_message = f"Error processing new email: {e}"
+            error_message = f"Error processing new event: {e}"
             print(f"ERROR: {error_message}")
             raise RuntimeError(error_message) from e
 

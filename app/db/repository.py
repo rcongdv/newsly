@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Email
@@ -16,10 +16,8 @@ class EmailRepository:
         sender_name: str | None = None,
         sender_email: str | None = None,
         subject: str | None = None,
-        snippet: str | None = None,
         body_html: str | None = None,
         body_text: str | None = None,
-        ai_summary: str | None = None,
         email_date: datetime | None = None,
     ) -> Email:
         email = Email(
@@ -27,10 +25,8 @@ class EmailRepository:
             sender_name=sender_name,
             sender_email=sender_email,
             subject=subject,
-            snippet=snippet,
             body_html=body_html,
             body_text=body_text,
-            ai_summary=ai_summary,
             email_date=email_date,
         )
         self.session.add(email)
@@ -49,14 +45,22 @@ class EmailRepository:
         return result.scalar_one_or_none()
 
     async def get_by_date_range(
-        self, start_date: datetime, end_date: datetime
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        allowed_domains: list[str] | None = None,
     ) -> list[Email]:
-        result = await self.session.execute(
+        query = (
             select(Email)
             .where(Email.email_date >= start_date)
             .where(Email.email_date < end_date)
-            .order_by(Email.email_date.desc())
         )
+        if allowed_domains:
+            domain_filters = [
+                Email.sender_email.contains(domain) for domain in allowed_domains
+            ]
+            query = query.where(or_(*domain_filters))
+        result = await self.session.execute(query.order_by(Email.email_date.asc()))
         return list(result.scalars().all())
 
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[Email]:
@@ -75,10 +79,8 @@ class EmailRepository:
         sender_name: str | None = None,
         sender_email: str | None = None,
         subject: str | None = None,
-        snippet: str | None = None,
         body_html: str | None = None,
         body_text: str | None = None,
-        ai_summary: str | None = None,
         email_date: datetime | None = None,
     ) -> tuple[Email, bool]:
         """
@@ -94,10 +96,8 @@ class EmailRepository:
             sender_name=sender_name,
             sender_email=sender_email,
             subject=subject,
-            snippet=snippet,
             body_html=body_html,
             body_text=body_text,
-            ai_summary=ai_summary,
             email_date=email_date,
         )
         return email, True

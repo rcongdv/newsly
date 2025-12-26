@@ -28,7 +28,10 @@ class Database:
                 "postgresql://", "postgresql+asyncpg://", 1
             )
 
-        connect_args = {"command_timeout": 60}
+        connect_args = {
+            "command_timeout": 60,
+            "prepared_statement_cache_size": 0,
+        }
 
         self.engine = create_async_engine(
             database_url,

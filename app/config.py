@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     grok_api_key: str
     grok_model: str = "grok-3-mini"
 
+    # TTS General
+    tts_provider: str = "pytts"
+    tts_output_format: str = "mp3"
+    tts_output_file: str = "output"
+    tts_language: str = "en"
+
     # ElevenLabs TTS
     elevenlabs_api_key: str = ""
     elevenlabs_voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
@@ -29,24 +35,26 @@ class Settings(BaseSettings):
     pytts_volume: float = 1.0
     pytts_voice_id: str = "0"
 
-    # TTS General
-    tts_provider: str = "pytts"
-    tts_output_format: str = "mp3"
-    tts_output_file: str = "output"
-
     # Database
     database_url: str
 
     # Other
     time_frames: dict = {
-        "morning": ("00:00:00", "6:45:00"),
-        "afternoon": ("06:45:00", "13:30:00"),
+        "morning": ("00:00:00", "6:00:00"),
+        "afternoon": ("06:00:00", "13:30:00"),
     }
     time_format: str = "%H:%M:%S"
+    email_domain_whitelist: str = ""
 
     @property
     def tts_output_path(self) -> str:
         return f"{self.tts_output_file}.{self.tts_output_format}"
+
+    @property
+    def email_domain_whitelist_list(self) -> list[str]:
+        if not self.email_domain_whitelist:
+            return []
+        return [d.strip() for d in self.email_domain_whitelist.split(",") if d.strip()]
 
 
 @lru_cache

@@ -2,8 +2,10 @@ name: Daily Email Cron
 
 on:
   schedule:
-    # 8am PST = 16:00 UTC
-    - cron: '0 16 * * *'
+    # 6:00am PST = 14:00 UTC
+    - cron: "00 14 * * *"
+    # 1:30pm PST = 21:30 UTC
+    - cron: "30 21 * * *"
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -12,7 +14,12 @@ jobs:
     steps:
       - name: Trigger email send
         run: |
-          curl -X POST "https://newsly.fly.dev/api/v1/email/send?period=morning" \
+          if [ "${{ github.event.schedule }}" = "30 21 * * *" ]; then
+            PERIOD="afternoon"
+          else
+            PERIOD="morning"
+          fi
+          curl -X POST "https://newsly.fly.dev/api/v1/email/send?period=${PERIOD}" \
             --fail \
             --silent \
             --show-error

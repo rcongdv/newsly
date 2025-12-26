@@ -17,10 +17,8 @@ class Email(Base):
     sender_name: Mapped[str | None] = mapped_column(String(500))
     sender_email: Mapped[str | None] = mapped_column(String(500))
     subject: Mapped[str | None] = mapped_column(String(1000))
-    snippet: Mapped[str | None] = mapped_column(Text)
     body_html: Mapped[str | None] = mapped_column(Text)
     body_text: Mapped[str | None] = mapped_column(Text)
-    ai_summary: Mapped[str | None] = mapped_column(Text)
     email_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now

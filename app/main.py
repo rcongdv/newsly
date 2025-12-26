@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up...")
+
     logger.info("Initializing database...")
     await get_database().init_db()
     logger.info("Database initialized.")
@@ -37,17 +38,18 @@ app = FastAPI(lifespan=lifespan)
 
 @app.get("/api/v1/health")
 def health_check():
+    logger.info("Health check requested")
     return {"status": "healthy"}
 
 
 @app.post("/api/v1/email/new")
-async def process_new_email(request: Request):
+async def process_new_event(request: Request):
     try:
         data = await request.json()
         logger.info(f"Received new email: {data}")
 
         email_service = get_email_service()
-        result = email_service.process_new_email()
+        result = email_service.process_new_event()
 
         latest_email = result.get("latest_email")
 
@@ -60,12 +62,22 @@ async def process_new_email(request: Request):
                     logger.info(f"Email already exists in DB: {latest_email.get('id')}")
                     return {"message": "Email already processed"}
 
-                return {"message": "New email received and processed"}
+                await repo.create(
+                    gmail_id=latest_email.get("id"),
+                    sender_name=latest_email.get("sender_name"),
+                    sender_email=latest_email.get("sender_email"),
+                    subject=latest_email.get("subject"),
+                    body_html=latest_email.get("body_html"),
+                    body_text=latest_email.get("body_text"),
+                    email_date=latest_email.get("email_date"),
+                )
+
+                return {"message": "New event received and processed"}
 
             return {"message": "No email to process"}
     except Exception as e:
-        logger.error(f"Error processing new email: {e}")
-        return {"error": "Failed to process new email", "status_code": 500}
+        logger.error(f"Error processing new event: {e}")
+        return {"error": "Failed to process new event", "status_code": 500}
 
 
 @app.post("/api/v1/email/send")
@@ -88,7 +100,9 @@ async def trigger_grok(request: Request):
                 date.today(), datetime.strptime(time_frame[1], time_format).time()
             )
             emails = await repo.get_by_date_range(
-                start_date=start_date, end_date=end_date
+                start_date=start_date,
+                end_date=end_date,
+                allowed_domains=settings.email_domain_whitelist_list,
             )
 
             emails_text = "\n\nNEXT EMAIL:\n\n".join(

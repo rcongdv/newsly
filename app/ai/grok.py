@@ -28,6 +28,9 @@ class Grok:
         prompt_path = Path(__file__).parent / "system_prompt.md"
         self.system_prompt = prompt_path.read_text().strip()
 
+        if settings.tts_language == "ch":
+            self.system_prompt += "\nRespond in Mandarin Chinese."
+
         if not self.api_key:
             raise ValueError(
                 "Missing required GROK_API_KEY environment variable. Cannot initialize Grok service."
