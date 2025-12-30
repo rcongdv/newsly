@@ -7,6 +7,7 @@ import asyncio
 import base64
 import re
 import sys
+import traceback
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -195,9 +196,12 @@ async def main():
             except HttpError as e:
                 error_count += 1
                 print(f"Error fetching email {message_id}: {e}")
+                traceback.print_exc()
             except Exception as e:
                 error_count += 1
                 print(f"Error processing email {message_id}: {e}")
+                traceback.print_exc()
+                await session.rollback()
 
     print(f"\nDone! Processed {total} emails:")
     print(f"  - {new_count} new emails added")

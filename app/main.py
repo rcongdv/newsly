@@ -81,7 +81,7 @@ async def process_new_event(request: Request):
 
 
 @app.post("/api/v1/email/send")
-async def trigger_grok(request: Request):
+async def send_email(request: Request):
     try:
         period = request.query_params.get("period", "morning")
         logger.info(f"Triggering email sending for period: {period}")
@@ -105,22 +105,27 @@ async def trigger_grok(request: Request):
                 allowed_domains=settings.email_domain_whitelist_list,
             )
 
-            emails_text = "\n\nNEXT EMAIL:\n\n".join(
-                email.body_html for email in emails
-            )
+            if not emails:
+                body = f"No news found."
+                attachments = []
+            else:
+                emails_text = "\n\nNEXT EMAIL:\n\n".join(
+                    email.body_html for email in emails
+                )
 
-            grok = get_grok_service()
-            response = grok.prompt(emails_text)
+                grok = get_grok_service()
+                response = grok.prompt(emails_text)
+                body = response.content
 
-            TTSServiceFactory.text_to_speech(response.content)
+                TTSServiceFactory.text_to_speech(response.content)
+                attachments = [settings.tts_output_path]
 
             email_service = get_email_service()
-
             email_service.send_email(
                 to="richardcong635@gmail.com",
-                subject="",
-                body_text=response.content,
-                attachments=[settings.tts_output_path],
+                subject=f"Newsly Summary for {date.today()} {period.capitalize()}",
+                body_text=body,
+                attachments=attachments,
             )
         return {"message": "Email sending triggered"}
     except Exception as e:
