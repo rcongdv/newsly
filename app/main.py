@@ -2,6 +2,7 @@ import logging
 import sys
 import uvicorn
 from datetime import date, time, datetime, timedelta
+from zoneinfo import ZoneInfo
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -110,11 +111,12 @@ async def send_email(request: Request):
         async with get_database().async_session() as session:
             repo = EmailRepository(session)
 
+            pst = ZoneInfo("America/Los_Angeles")
             start_date = datetime.combine(
-                target_date, datetime.strptime(time_frame[0], time_format).time()
+                target_date, datetime.strptime(time_frame[0], time_format).time(), tzinfo=pst
             )
             end_date = datetime.combine(
-                target_date, datetime.strptime(time_frame[1], time_format).time()
+                target_date, datetime.strptime(time_frame[1], time_format).time(), tzinfo=pst
             )
             logger.info(f"Querying emails from {start_date} to {end_date}")
             logger.info(f"Allowed domains: {settings.email_domain_whitelist_list}")

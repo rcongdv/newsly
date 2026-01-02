@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     # Other
     time_frames: dict = {
+        # PST
         "morning": ("00:00:00", "6:00:00"),
         "afternoon": ("06:00:00", "13:30:00"),
     }
