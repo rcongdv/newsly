@@ -1,11 +1,18 @@
 import asyncio
 import logging
+from uuid import uuid4
+from asyncpg import Connection
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+class PGBouncerConnection(Connection):
+    def _get_unique_id(self, prefix: str) -> str:
+        return f"__asyncpg_{prefix}_{uuid4()}__"
 
 
 class Base(DeclarativeBase):
@@ -31,6 +38,7 @@ class Database:
         connect_args = {
             "command_timeout": 60,
             "statement_cache_size": 0,
+            "connection_class": PGBouncerConnection,
         }
 
         self.engine = create_async_engine(

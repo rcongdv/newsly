@@ -4,7 +4,7 @@
 #
 
 app = 'newsly'
-primary_region = 'ord'
+primary_region = 'lax'
 
 [build]
 

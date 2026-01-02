@@ -44,7 +44,7 @@ class Settings(BaseSettings):
         "afternoon": ("06:00:00", "13:30:00"),
     }
     time_format: str = "%H:%M:%S"
-    email_domain_whitelist: str = ""
+    email_whitelist: str = ""
 
     @property
     def tts_output_path(self) -> str:
@@ -52,9 +52,9 @@ class Settings(BaseSettings):
 
     @property
     def email_domain_whitelist_list(self) -> list[str]:
-        if not self.email_domain_whitelist:
+        if not self.email_whitelist:
             return []
-        return [d.strip() for d in self.email_domain_whitelist.split(",") if d.strip()]
+        return [d.strip() for d in self.email_whitelist.split(",") if d.strip()]
 
 
 @lru_cache
