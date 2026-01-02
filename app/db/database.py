@@ -30,7 +30,7 @@ class Database:
 
         connect_args = {
             "command_timeout": 60,
-            "prepared_statement_cache_size": 0,
+            "statement_cache_size": 0,
         }
 
         self.engine = create_async_engine(

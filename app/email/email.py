@@ -131,7 +131,7 @@ class Email:
                 elif header["name"] == "Subject":
                     email_info["subject"] = header["value"]
                 elif header["name"] == "Date":
-                    email_info["date"] = self._parse_date(header["value"])
+                    email_info["email_date"] = self._parse_date(header["value"])
 
             # Extract email body (HTML preferred, fallback to plain text)
             body_html, body_text = self._extract_body(message["payload"])

@@ -4,6 +4,7 @@ import uvicorn
 from datetime import date, time, datetime, timedelta
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from app.config import get_settings
 from app.db import get_database, EmailRepository
@@ -76,15 +77,17 @@ async def process_new_event(request: Request):
 
             return {"message": "No email to process"}
     except Exception as e:
-        logger.error(f"Error processing new event: {e}")
-        return {"error": "Failed to process new event", "status_code": 500}
+        logger.exception("Error processing new event")
+        return JSONResponse(status_code=500, content={"error": "Failed to process new event"})
 
 
 @app.post("/api/v1/email/send")
 async def send_email(request: Request):
     try:
         period = request.query_params.get("period", "morning")
-        logger.info(f"Triggering email sending for period: {period}")
+        date_param = request.query_params.get("date")
+        target_date = date.fromisoformat(date_param) if date_param else date.today()
+        logger.info(f"Triggering email sending for period: {period}, date: {target_date}")
 
         settings = get_settings()
         time_frame = settings.time_frames.get(period)
@@ -94,10 +97,10 @@ async def send_email(request: Request):
             repo = EmailRepository(session)
 
             start_date = datetime.combine(
-                date.today(), datetime.strptime(time_frame[0], time_format).time()
+                target_date, datetime.strptime(time_frame[0], time_format).time()
             )
             end_date = datetime.combine(
-                date.today(), datetime.strptime(time_frame[1], time_format).time()
+                target_date, datetime.strptime(time_frame[1], time_format).time()
             )
             emails = await repo.get_by_date_range(
                 start_date=start_date,
@@ -123,14 +126,14 @@ async def send_email(request: Request):
             email_service = get_email_service()
             email_service.send_email(
                 to="richardcong635@gmail.com",
-                subject=f"Newsly Summary for {date.today()} {period.capitalize()}",
+                subject=f"Newsly Summary for {target_date} {period.capitalize()}",
                 body_text=body,
                 attachments=attachments,
             )
         return {"message": "Email sending triggered"}
     except Exception as e:
-        logger.error(f"Error triggering email sending: {e}")
-        return {"error": "Failed to trigger email sending", "status_code": 500}
+        logger.exception("Error triggering email sending")
+        return JSONResponse(status_code=500, content={"error": "Failed to trigger email sending"})
 
 
 if __name__ == "__main__":
