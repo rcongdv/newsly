@@ -26,10 +26,19 @@ The API runs on `http://localhost:8000`.
 - `GROK_MODEL` - Model to use (defaults to latest)
 
 **TTS:**
-- `TTS_PROVIDER` - Either `pytts` (local, free) or `elevenlabs` (cloud, better quality)
+- `TTS_PROVIDER` - One of: `pytts`, `elevenlabs`, `piper`, `coqui`, `google`
 - `TTS_OUTPUT_FORMAT` - `mp3`, `wav`, etc.
-- For ElevenLabs: `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID`
-- For PyTTS: `PYTTS_VOICE_RATE`, `PYTTS_VOLUME`, `PYTTS_VOICE_ID`
+- `TTS_LANGUAGE` - Language code (default: `en`)
+
+Provider-specific settings:
+
+| Provider | Variables | Notes |
+|----------|-----------|-------|
+| `pytts` | `PYTTS_VOICE_RATE`, `PYTTS_VOLUME`, `PYTTS_VOICE_ID` | Local, uses system TTS. Robotic on Linux (espeak). |
+| `elevenlabs` | `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` | Cloud, high quality, paid API. |
+| `piper` | `PIPER_MODEL_PATH`, `PIPER_SPEAKER_ID`, `PIPER_LENGTH_SCALE`, `PIPER_SENTENCE_SILENCE` | Local neural TTS, lightweight, good quality. |
+| `coqui` | `COQUI_MODEL_NAME`, `COQUI_SPEAKER_WAV`, `COQUI_USE_GPU` | Local neural TTS, supports voice cloning. Large dependency (PyTorch). |
+| `google` | `GOOGLE_TTS_CREDENTIALS_PATH`, `GOOGLE_TTS_LANGUAGE_CODE`, `GOOGLE_TTS_VOICE_NAME`, `GOOGLE_TTS_VOICE_GENDER`, `GOOGLE_TTS_SPEAKING_RATE`, `GOOGLE_TTS_PITCH` | Cloud, high quality, pay-per-use. |
 
 **Database:**
 - `DATABASE_URL` - PostgreSQL connection string
@@ -76,7 +85,7 @@ app/
 ├── integrations/       # External services
 │   ├── gmail/          # Gmail API client
 │   ├── ai/             # Grok summarization
-│   └── tts/            # Text-to-speech (ElevenLabs, PyTTS)
+│   └── tts/            # Text-to-speech (PyTTS, ElevenLabs, Piper, Coqui, Google)
 ├── schemas/            # Pydantic models
 └── services/           # Business logic
 ```

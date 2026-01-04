@@ -6,7 +6,7 @@ Newsletter-to-audio service. Fetches emails from Gmail, summarizes with Grok AI,
 
 - Python 3.12, FastAPI, async SQLAlchemy with PostgreSQL
 - Grok (xai_sdk) for AI summarization
-- TTS: PyTTS (pyttsx3, local) or ElevenLabs (cloud)
+- TTS: PyTTS, ElevenLabs, Piper, Coqui TTS, Google Cloud TTS
 - Gmail API for email fetch/send
 - Deployed on Fly.io
 
@@ -20,7 +20,7 @@ app/
 ├── integrations/
 │   ├── gmail/           # Gmail API client
 │   ├── ai/              # Grok service
-│   └── tts/             # TTS factory + providers (elevenlabs.py, pytts.py)
+│   └── tts/             # TTS factory + providers (pytts, elevenlabs, piper, coqui, google_tts)
 ├── schemas/             # Pydantic request/response models
 ├── services/            # Business logic (summary_generator.py)
 └── main.py              # FastAPI app entrypoint
@@ -60,7 +60,7 @@ All tests use mocks - no external services needed.
 
 ## Notes
 
-- TTS runs in Docker with espeak-ng (Linux). PyTTS outputs WAV, converts to MP3 via pydub.
+- **TTS providers**: PyTTS uses espeak-ng on Linux (robotic). For better quality in Docker, use Piper (lightweight neural), Coqui (voice cloning), ElevenLabs, or Google Cloud TTS.
 - Database uses asyncpg with connection pooling (PGBouncer compatible).
 - Gmail uses OAuth2 with refresh tokens. Run `scripts/generate_refresh_token.py` to get one.
 - Email filtering via `EMAIL_WHITELIST` env var (comma-separated sender domains).
@@ -73,3 +73,10 @@ All tests use mocks - no external services needed.
   - Changes to project structure
   - New dependencies or setup steps
   - Changes to how the app is run or deployed
+
+- **Write tests for new code**:
+  - New features and integrations must have corresponding tests in `tests/`
+  - Follow existing test patterns (see `test_elevenlabs.py`, `test_pytts.py` for examples)
+  - Use mocks for external services - no real API calls in tests
+  - Test both success paths and error handling
+  - Include tests for factory functions that create services from settings
