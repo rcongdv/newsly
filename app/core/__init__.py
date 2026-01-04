@@ -8,16 +8,9 @@ from app.core.exceptions import (
     GmailServiceError,
     ConfigurationError,
 )
-from app.core.dependencies import (
-    SettingsDep,
-    DBSessionDep,
-    EmailRepoDep,
-    GmailClientDep,
-    AIServiceDep,
-    TTSServiceDep,
-    EmailProcessorDep,
-    SummaryGeneratorDep,
-)
+
+# Note: Dependencies are imported directly from app.core.dependencies
+# to avoid circular imports
 
 __all__ = [
     # Config
@@ -31,13 +24,4 @@ __all__ = [
     "TTSServiceError",
     "GmailServiceError",
     "ConfigurationError",
-    # Dependencies
-    "SettingsDep",
-    "DBSessionDep",
-    "EmailRepoDep",
-    "GmailClientDep",
-    "AIServiceDep",
-    "TTSServiceDep",
-    "EmailProcessorDep",
-    "SummaryGeneratorDep",
 ]

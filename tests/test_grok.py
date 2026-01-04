@@ -1,151 +1,143 @@
+"""Tests for the GrokService in app.integrations.ai.grok."""
+
 import pytest
-from unittest.mock import MagicMock, patch, PropertyMock
-import app.ai.grok as grok_module
+from unittest.mock import MagicMock, patch
+from pathlib import Path
+
+from app.integrations.ai.grok import GrokService, create_grok_service
 
 
-class TestGrok:
+class TestGrokService:
+    """Tests for the GrokService class."""
 
-    @patch("app.ai.grok.system")
-    @patch("app.ai.grok.Client")
-    @patch("app.ai.grok.Path")
-    @patch("app.ai.grok.get_settings")
-    def test_init_success(self, mock_get_settings, mock_path, mock_client, mock_system):
-        """Test successful initialization of Grok class."""
-        mock_settings = MagicMock()
-        mock_settings.grok_api_key = "test-api-key"
-        mock_settings.grok_model = "test-model"
-        mock_get_settings.return_value = mock_settings
-
-        mock_prompt_path = MagicMock()
-        mock_prompt_path.exists.return_value = True
-        mock_prompt_path.read_text.return_value = "test-prompt"
-        mock_path.return_value.__truediv__.return_value = mock_prompt_path
-
+    @patch("app.integrations.ai.grok.Client")
+    def test_init_success(self, mock_client):
+        """Test successful initialization of GrokService."""
         mock_chat = MagicMock()
         mock_client.return_value.chat.create.return_value = mock_chat
 
-        grok = grok_module.Grok()
+        service = GrokService(
+            api_key="test-api-key",
+            model="test-model",
+            language="en",
+        )
 
         mock_client.assert_called_once_with(api_key="test-api-key")
-        mock_client.return_value.chat.create.assert_called_once()
-        assert grok.chat == mock_chat
+        assert service._model == "test-model"
+        assert service._api_key == "test-api-key"
 
-    @patch("app.ai.grok.get_settings")
-    def test_init_missing_api_key(self, mock_get_settings):
+    def test_init_missing_api_key(self):
         """Test that initialization raises ValueError when API key is missing."""
-        mock_settings = MagicMock()
-        mock_settings.grok_api_key = ""
-        mock_settings.grok_model = "test-model"
-        mock_get_settings.return_value = mock_settings
-
         with pytest.raises(ValueError, match="Missing required GROK_API_KEY"):
-            grok_module.Grok()
+            GrokService(api_key="", model="test-model")
 
-    @patch("app.ai.grok.system")
-    @patch("app.ai.grok.Client")
-    @patch("app.ai.grok.Path")
-    @patch("app.ai.grok.get_settings")
-    def test_prompt(self, mock_get_settings, mock_path, mock_client, mock_system):
-        """Test the prompt method sends message and returns response."""
-        mock_settings = MagicMock()
-        mock_settings.grok_api_key = "test-api-key"
-        mock_settings.grok_model = "test-model"
-        mock_get_settings.return_value = mock_settings
+    def test_init_none_api_key(self):
+        """Test that initialization raises ValueError when API key is None."""
+        with pytest.raises(ValueError, match="Missing required GROK_API_KEY"):
+            GrokService(api_key=None, model="test-model")
 
-        mock_prompt_path = MagicMock()
-        mock_prompt_path.exists.return_value = True
-        mock_prompt_path.read_text.return_value = "test-prompt"
-        mock_path.return_value.__truediv__.return_value = mock_prompt_path
-
+    @patch("app.integrations.ai.grok.Client")
+    def test_summarize_creates_new_chat_per_request(self, mock_client):
+        """Test that summarize creates a fresh chat instance per request."""
         mock_chat = MagicMock()
-        mock_chat.sample.return_value = "Test response from Grok"
+        mock_chat.sample.return_value = MagicMock(content="Summary response")
         mock_client.return_value.chat.create.return_value = mock_chat
 
-        grok = grok_module.Grok()
-        response = grok.prompt("Hello, Grok!")
+        service = GrokService(
+            api_key="test-api-key",
+            model="test-model",
+        )
 
+        # Call summarize twice
+        service.summarize("First content")
+        service.summarize("Second content")
+
+        # chat.create should be called twice (once per summarize call)
+        # This verifies the concurrency fix - new chat per request
+        assert mock_client.return_value.chat.create.call_count == 2
+
+    @patch("app.integrations.ai.grok.Client")
+    def test_summarize_returns_content(self, mock_client):
+        """Test that summarize returns the response content."""
+        mock_chat = MagicMock()
+        mock_chat.sample.return_value = MagicMock(content="Test summary")
+        mock_client.return_value.chat.create.return_value = mock_chat
+
+        service = GrokService(
+            api_key="test-api-key",
+            model="test-model",
+        )
+
+        result = service.summarize("Test content")
+
+        assert result == "Test summary"
         mock_chat.append.assert_called_once()
         mock_chat.sample.assert_called_once()
-        assert response == "Test response from Grok"
 
-    @patch("app.ai.grok.system")
-    @patch("app.ai.grok.Client")
-    @patch("app.ai.grok.Path")
-    @patch("app.ai.grok.get_settings")
-    def test_prompt_appends_to_chat(self, mock_get_settings, mock_path, mock_client, mock_system):
-        """Test that prompt appends messages to chat."""
-        mock_settings = MagicMock()
-        mock_settings.grok_api_key = "test-api-key"
-        mock_settings.grok_model = "test-model"
-        mock_get_settings.return_value = mock_settings
-
-        mock_prompt_path = MagicMock()
-        mock_prompt_path.exists.return_value = True
-        mock_prompt_path.read_text.return_value = "test-prompt"
-        mock_path.return_value.__truediv__.return_value = mock_prompt_path
-
+    @patch("app.integrations.ai.grok.Client")
+    def test_prompt_calls_summarize(self, mock_client):
+        """Test that prompt method calls summarize for backward compatibility."""
         mock_chat = MagicMock()
-        mock_chat.sample.return_value = "Response"
+        mock_chat.sample.return_value = MagicMock(content="Response")
         mock_client.return_value.chat.create.return_value = mock_chat
 
-        grok = grok_module.Grok()
-        grok.prompt("First prompt")
-        grok.prompt("Second prompt")
+        service = GrokService(
+            api_key="test-api-key",
+            model="test-model",
+        )
 
-        assert mock_chat.append.call_count == 2
+        result = service.prompt("Test prompt")
 
+        assert result == "Response"
 
-class TestGetGrokService:
+    @patch("app.integrations.ai.grok.Client")
+    def test_chinese_language_appends_to_system_prompt(self, mock_client):
+        """Test that Chinese language setting modifies system prompt."""
+        mock_chat = MagicMock()
+        mock_client.return_value.chat.create.return_value = mock_chat
 
-    def setup_method(self):
-        """Reset the singleton before each test."""
-        grok_module.grok_service = None
+        service = GrokService(
+            api_key="test-api-key",
+            model="test-model",
+            language="ch",
+        )
 
-    @patch("app.ai.grok.system")
-    @patch("app.ai.grok.Client")
-    @patch("app.ai.grok.Path")
-    @patch("app.ai.grok.get_settings")
-    def test_get_grok_service_creates_instance(self, mock_get_settings, mock_path, mock_client, mock_system):
-        """Test that get_grok_service creates a new Grok instance."""
-        mock_settings = MagicMock()
-        mock_settings.grok_api_key = "test-api-key"
-        mock_settings.grok_model = "test-model"
-        mock_get_settings.return_value = mock_settings
+        assert "Mandarin Chinese" in service._system_prompt
 
-        mock_prompt_path = MagicMock()
-        mock_prompt_path.exists.return_value = True
-        mock_prompt_path.read_text.return_value = "test-prompt"
-        mock_path.return_value.__truediv__.return_value = mock_prompt_path
+    @patch("app.integrations.ai.grok.Client")
+    def test_custom_system_prompt_path(self, mock_client, tmp_path):
+        """Test that custom system prompt path is used."""
+        # Create a temporary prompt file
+        prompt_file = tmp_path / "custom_prompt.md"
+        prompt_file.write_text("Custom system prompt")
 
         mock_chat = MagicMock()
         mock_client.return_value.chat.create.return_value = mock_chat
 
-        service = grok_module.get_grok_service()
+        service = GrokService(
+            api_key="test-api-key",
+            model="test-model",
+            system_prompt_path=prompt_file,
+        )
 
-        assert service is not None
-        assert isinstance(service, grok_module.Grok)
+        assert service._system_prompt == "Custom system prompt"
 
-    @patch("app.ai.grok.system")
-    @patch("app.ai.grok.Client")
-    @patch("app.ai.grok.Path")
-    @patch("app.ai.grok.get_settings")
-    def test_get_grok_service_returns_singleton(self, mock_get_settings, mock_path, mock_client, mock_system):
-        """Test that get_grok_service returns the same instance on subsequent calls."""
+
+class TestCreateGrokService:
+    """Tests for the create_grok_service factory function."""
+
+    @patch("app.integrations.ai.grok.Client")
+    def test_create_grok_service_from_settings(self, mock_client):
+        """Test that create_grok_service creates service from settings."""
         mock_settings = MagicMock()
-        mock_settings.grok_api_key = "test-api-key"
-        mock_settings.grok_model = "test-model"
-        mock_get_settings.return_value = mock_settings
-
-        mock_prompt_path = MagicMock()
-        mock_prompt_path.exists.return_value = True
-        mock_prompt_path.read_text.return_value = "test-prompt"
-        mock_path.return_value.__truediv__.return_value = mock_prompt_path
+        mock_settings.grok_api_key = "settings-api-key"
+        mock_settings.grok_model = "settings-model"
+        mock_settings.tts_language = "en"
 
         mock_chat = MagicMock()
         mock_client.return_value.chat.create.return_value = mock_chat
 
-        service1 = grok_module.get_grok_service()
-        service2 = grok_module.get_grok_service()
+        service = create_grok_service(mock_settings)
 
-        assert service1 is service2
-        mock_client.assert_called_once()
+        assert isinstance(service, GrokService)
+        mock_client.assert_called_once_with(api_key="settings-api-key")

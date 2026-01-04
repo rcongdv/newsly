@@ -25,6 +25,11 @@ class ElevenLabsService:
         self._model_id = model_id
         self._output_path = output_path
 
+    @property
+    def output_path(self) -> str:
+        """Return the output path where audio will be saved."""
+        return self._output_path
+
     def text_to_speech(self, text: str) -> None:
         """Generate TTS audio with ElevenLabs."""
         logger.info("Generating TTS audio with ElevenLabs")

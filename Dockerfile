@@ -11,7 +11,7 @@ FROM python:3.12.12-slim
 
 ENV PYTHONUNBUFFERED=1
 
-RUN apt-get update && apt-get install -y espeak-ng && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y espeak-ng ffmpeg && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY --from=builder /app/.venv .venv/

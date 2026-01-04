@@ -105,8 +105,8 @@ class SummaryGeneratorService:
         # Generate TTS
         logger.info("Generating TTS audio...")
         self._tts_service.text_to_speech(summary)
-        attachments = [self._settings.tts_output_path]
-        logger.info(f"TTS complete, attachment: {self._settings.tts_output_path}")
+        attachments = [self._tts_service.output_path]
+        logger.info(f"TTS complete, attachment: {self._tts_service.output_path}")
 
         # Send email
         logger.info(f"Sending summary email to {recipient}...")
