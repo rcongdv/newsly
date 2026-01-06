@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     elevenlabs_api_key: str = ""
     elevenlabs_voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
     elevenlabs_model_id: str = "eleven_multilingual_v2"
+    elevenlabs_model_ids: str = ""  # Comma-separated list for multi-model generation
+    elevenlabs_timeout: float = 300.0  # Timeout in seconds for API requests
 
     # ============ PyTTS ============
     pytts_voice_rate: int = 125
@@ -91,6 +93,20 @@ class Settings(BaseSettings):
         if not self.email_whitelist:
             return []
         return [d.strip() for d in self.email_whitelist.split(",") if d.strip()]
+
+    @property
+    def elevenlabs_model_id_list(self) -> list[str]:
+        """Return list of ElevenLabs model IDs.
+
+        Uses elevenlabs_model_ids if set, otherwise falls back to elevenlabs_model_id.
+        Both fields support comma-separated values.
+        """
+        if self.elevenlabs_model_ids:
+            return [m.strip() for m in self.elevenlabs_model_ids.split(",") if m.strip()]
+        # Also handle comma-separated values in the singular field for convenience
+        if "," in self.elevenlabs_model_id:
+            return [m.strip() for m in self.elevenlabs_model_id.split(",") if m.strip()]
+        return [self.elevenlabs_model_id]
 
     @field_validator("timezone")
     @classmethod

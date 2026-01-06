@@ -18,11 +18,16 @@ class TTSService(Protocol):
 
     @property
     def output_path(self) -> str:
-        """Return the actual output path where audio will be saved."""
+        """Return the primary output path where audio will be saved."""
+        ...
+
+    @property
+    def output_paths(self) -> list[str]:
+        """Return all output paths (for multi-file generation)."""
         ...
 
     def text_to_speech(self, text: str) -> None:
-        """Convert text to speech and save to file."""
+        """Convert text to speech and save to file(s)."""
         ...
 
 
@@ -59,6 +64,11 @@ class BaseTTSService(ABC):
     def output_path(self) -> str:
         """Return the output path where audio will be saved."""
         return self._output_path
+
+    @property
+    def output_paths(self) -> list[str]:
+        """Return all output paths (single file for base implementation)."""
+        return [self._output_path]
 
     def _get_wav_output_path(self) -> str:
         """Get the path to write WAV output to.
