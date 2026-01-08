@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     grok_model: str = "grok-3-mini"
 
     # ============ TTS General ============
-    tts_provider: Literal["pytts", "elevenlabs", "piper", "coqui", "google"] = "pytts"
+    tts_provider: Literal["pytts", "elevenlabs", "google"] = "pytts"
     tts_output_format: str = "mp3"
     tts_output_file: str = "output"
     tts_language: str = "en"
@@ -46,17 +46,6 @@ class Settings(BaseSettings):
     pytts_voice_rate: int = 125
     pytts_volume: float = 1.0
     pytts_voice_id: str = "0"
-
-    # ============ Piper TTS ============
-    piper_model_path: str = ""  # Path to .onnx model file
-    piper_speaker_id: int | None = None  # For multi-speaker models
-    piper_length_scale: float = 1.0  # Speech speed (1.0 = normal)
-    piper_sentence_silence: float = 0.2  # Seconds of silence between sentences
-
-    # ============ Coqui TTS ============
-    coqui_model_name: str = "tts_models/en/ljspeech/tacotron2-DDC"
-    coqui_speaker_wav: str | None = None  # Path to reference audio for voice cloning
-    coqui_use_gpu: bool = False
 
     # ============ Google Cloud TTS ============
     google_tts_credentials_path: str | None = None  # Path to service account JSON
