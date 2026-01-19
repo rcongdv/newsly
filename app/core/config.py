@@ -55,6 +55,20 @@ class Settings(BaseSettings):
     google_tts_speaking_rate: float = 1.0  # 0.25 to 4.0
     google_tts_pitch: float = 0.0  # -20.0 to 20.0 semitones
 
+    # ============ Video Generation ============
+    video_enabled: bool = True
+    video_output_format: str = "mp4"
+    video_output_file: str = "output"
+    video_background_color: str = "#1a1a2e"
+    video_background_image: str | None = None
+    video_width: int = 1080
+    video_height: int = 1080
+
+    # ============ Subtitles ============
+    subtitle_font_size: int = 48
+    subtitle_font_color: str = "white"
+    subtitle_max_chars_per_line: int = 60
+
     # ============ Database ============
     database_url: str
     db_pool_size: int = 5
@@ -75,6 +89,10 @@ class Settings(BaseSettings):
     @property
     def tts_output_path(self) -> str:
         return f"{self.tts_output_file}.{self.tts_output_format}"
+
+    @property
+    def video_output_path(self) -> str:
+        return f"{self.video_output_file}.{self.video_output_format}"
 
     @property
     def email_domain_whitelist_list(self) -> list[str]:

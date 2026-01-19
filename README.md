@@ -1,6 +1,6 @@
 # Newsly
 
-Turns your newsletter emails into audio summaries. Connects to Gmail, uses Grok to summarize the content, converts it to speech, and emails you the audio file.
+Turns your newsletter emails into audio summaries. Connects to Gmail, uses Grok to summarize the content, converts it to speech, and emails you the audio file. Optionally generates video with burned-in subtitles.
 
 ## Setup
 
@@ -37,6 +37,19 @@ Provider-specific settings:
 | `pytts` | `PYTTS_VOICE_RATE`, `PYTTS_VOLUME`, `PYTTS_VOICE_ID` | Local, uses system TTS. Robotic on Linux (espeak). |
 | `elevenlabs` | `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` | Cloud, high quality, paid API. |
 | `google` | `GOOGLE_TTS_CREDENTIALS_PATH`, `GOOGLE_TTS_LANGUAGE_CODE`, `GOOGLE_TTS_VOICE_NAME`, `GOOGLE_TTS_VOICE_GENDER`, `GOOGLE_TTS_SPEAKING_RATE`, `GOOGLE_TTS_PITCH` | Cloud, high quality, pay-per-use. |
+
+**Video Generation (Optional):**
+- `VIDEO_ENABLED` - Set to `true` to generate MP4 videos with subtitles (default: `false`)
+- `VIDEO_OUTPUT_FORMAT` - Video format (default: `mp4`)
+- `VIDEO_OUTPUT_FILE` - Output filename without extension (default: `output`)
+- `VIDEO_BACKGROUND_COLOR` - Hex color for video background (default: `#1a1a2e`)
+- `VIDEO_BACKGROUND_IMAGE` - Optional path to background image
+- `VIDEO_WIDTH` / `VIDEO_HEIGHT` - Video dimensions (default: `1080x1080`)
+- `SUBTITLE_FONT_SIZE` - Font size for subtitles (default: `48`)
+- `SUBTITLE_FONT_COLOR` - Subtitle text color (default: `white`)
+- `SUBTITLE_MAX_CHARS_PER_LINE` - Max characters per subtitle line (default: `60`)
+
+When enabled, both MP3 audio and MP4 video are attached to the summary email.
 
 **Database:**
 - `DATABASE_URL` - PostgreSQL connection string
@@ -83,7 +96,8 @@ app/
 ├── integrations/       # External services
 │   ├── gmail/          # Gmail API client
 │   ├── ai/             # Grok summarization
-│   └── tts/            # Text-to-speech (PyTTS, ElevenLabs, Google)
+│   ├── tts/            # Text-to-speech (PyTTS, ElevenLabs, Google)
+│   └── video/          # Video generation with subtitles (FFmpeg)
 ├── schemas/            # Pydantic models
 └── services/           # Business logic
 ```

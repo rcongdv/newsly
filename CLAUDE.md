@@ -7,6 +7,7 @@ Newsletter-to-audio service. Fetches emails from Gmail, summarizes with Grok AI,
 - Python 3.12, FastAPI, async SQLAlchemy with PostgreSQL
 - Grok (xai_sdk) for AI summarization
 - TTS: PyTTS, ElevenLabs, Google Cloud TTS
+- Video: FFmpeg with burned-in subtitles (optional)
 - Gmail API for email fetch/send
 - Deployed on Fly.io
 
@@ -20,7 +21,8 @@ app/
 ├── integrations/
 │   ├── gmail/           # Gmail API client
 │   ├── ai/              # Grok service
-│   └── tts/             # TTS factory + providers (pytts, elevenlabs, google_tts)
+│   ├── tts/             # TTS factory + providers (pytts, elevenlabs, google_tts)
+│   └── video/           # Video generation with subtitles (ffmpeg)
 ├── schemas/             # Pydantic request/response models
 ├── services/            # Business logic (summary_generator.py)
 └── main.py              # FastAPI app entrypoint
@@ -28,10 +30,10 @@ app/
 
 ## Patterns
 
-- **Factory pattern** for TTS providers (`TTSFactory.create()`)
+- **Factory pattern** for TTS providers (`TTSFactory.create()`) and video service (`VideoFactory.create()`)
 - **Repository pattern** for database access (`EmailRepository`)
 - **Dependency injection** via FastAPI's `Depends()`
-- **Protocol classes** for TTS service interface
+- **Protocol classes** for TTS and video service interfaces
 
 ## Running
 
@@ -56,11 +58,14 @@ All tests use mocks - no external services needed.
 - `app/core/config.py` - All env vars and settings
 - `app/services/summary_generator.py` - Main orchestration logic
 - `app/integrations/tts/base.py` - TTS factory and protocol
+- `app/integrations/video/base.py` - Video service protocol
+- `app/integrations/video/ffmpeg_video.py` - FFmpeg video implementation
 - `app/integrations/gmail/client.py` - Gmail API wrapper
 
 ## Notes
 
 - **TTS providers**: PyTTS uses espeak-ng on Linux (robotic). For better quality in Docker, use ElevenLabs or Google Cloud TTS.
+- **Video generation**: Optional feature that creates MP4 with burned-in subtitles. Enable with `VIDEO_ENABLED=true`. Uses FFmpeg (already in Dockerfile).
 - Database uses asyncpg with connection pooling (PGBouncer compatible).
 - Gmail uses OAuth2 with refresh tokens. Run `scripts/generate_refresh_token.py` to get one.
 - Email filtering via `EMAIL_WHITELIST` env var (comma-separated sender domains).
@@ -102,6 +107,12 @@ All tests use mocks - no external services needed.
 - Register in `TTSFactory.create()` method
 - Add provider to `TTSProvider` enum in config
 - Include corresponding tests
+
+### Adding New Video Providers
+- Implement the `VideoService` protocol from `app/integrations/video/base.py`
+- Register in `VideoFactory.create()` method
+- Include corresponding tests
+- Follow the pattern established by `FFmpegVideoService`
 
 ### Testing
 - New features and integrations must have corresponding tests in `tests/`

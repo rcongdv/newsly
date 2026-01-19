@@ -1,0 +1,23 @@
+"""Base class and protocol for video services."""
+
+from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class VideoService(Protocol):
+    """Protocol for video generation services."""
+
+    @property
+    def output_path(self) -> str:
+        """Return the output path where video will be saved."""
+        ...
+
+    def create_video(self, audio_path: str, text: str) -> None:
+        """
+        Create a video with subtitles from audio and text.
+
+        Args:
+            audio_path: Path to the audio file
+            text: Text content for generating subtitles
+        """
+        ...

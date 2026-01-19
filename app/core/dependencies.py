@@ -12,6 +12,8 @@ from app.integrations.gmail.client import GmailClient, create_gmail_client
 from app.integrations.ai.grok import GrokService, create_grok_service
 from app.integrations.tts.base import TTSService
 from app.integrations.tts.factory import TTSFactory
+from app.integrations.video.base import VideoService
+from app.integrations.video.factory import VideoFactory
 from app.services.email_processor import EmailProcessorService
 from app.services.summary_generator import SummaryGeneratorService
 
@@ -71,6 +73,14 @@ def get_tts_service(settings: SettingsDep) -> TTSService:
 TTSServiceDep = Annotated[TTSService, Depends(get_tts_service)]
 
 
+def get_video_service(settings: SettingsDep) -> VideoService | None:
+    """Get video service instance if enabled, otherwise None."""
+    return VideoFactory.create_from_settings(settings)
+
+
+VideoServiceDep = Annotated[VideoService | None, Depends(get_video_service)]
+
+
 # ============ Service Layer Dependencies ============
 def get_email_processor_service(
     settings: SettingsDep,
@@ -94,6 +104,7 @@ def get_summary_generator_service(
     gmail_client: GmailClientDep,
     ai_service: AIServiceDep,
     tts_service: TTSServiceDep,
+    video_service: VideoServiceDep,
 ) -> SummaryGeneratorService:
     """Get summary generator service instance."""
     return SummaryGeneratorService(
@@ -102,6 +113,7 @@ def get_summary_generator_service(
         gmail_client=gmail_client,
         ai_service=ai_service,
         tts_service=tts_service,
+        video_service=video_service,
     )
 
 

@@ -34,6 +34,12 @@ class TTSServiceError(NewslyException):
     pass
 
 
+class VideoServiceError(NewslyException):
+    """Raised when video generation fails."""
+
+    pass
+
+
 class GmailServiceError(NewslyException):
     """Raised when Gmail API fails."""
 

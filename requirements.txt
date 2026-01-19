@@ -15,3 +15,6 @@ pydub==0.25.1
 elevenlabs==2.27.0
 pyttsx3==2.99.0
 google-cloud-texttospeech==2.33.0
+
+# Video Generation
+ffmpeg-python==0.2.0

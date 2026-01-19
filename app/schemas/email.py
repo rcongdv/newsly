@@ -49,6 +49,7 @@ class SendSummaryResponse(BaseModel):
     emails_processed: int = 0
     summary_length: Optional[int] = None
     audio_generated: bool = False
+    video_generated: bool = False
 
 
 class EmailData(BaseModel):
