@@ -15,6 +15,7 @@ os.environ.update(
         "GROK_API_KEY": "test-grok-key",
         "DATABASE_URL": "postgresql+asyncpg://user:pass@localhost/testdb",
         "ELEVENLABS_API_KEY": "test-elevenlabs-key",
+        "API_KEY": "test-api-key-12345",
         "VIDEO_ENABLED": "true",
         "VIDEO_WIDTH": "1080",
         "VIDEO_HEIGHT": "1080",
@@ -47,6 +48,10 @@ from app.core.dependencies import (
 
 
 # ============ Settings Fixture ============
+# Test API key constant for use in tests
+TEST_API_KEY = "test-api-key-12345"
+
+
 @pytest.fixture
 def mock_settings() -> Settings:
     """Create mock settings with test values."""
@@ -58,6 +63,7 @@ def mock_settings() -> Settings:
         google_auth_refresh_token="test-refresh-token",
         gmail_pubsub_topic_name="projects/test/topics/gmail",
         grok_api_key="test-grok-key",
+        api_key=TEST_API_KEY,
         # Use simple time frames for easy testing
         time_frames={
             "morning": ("06:00:00", "09:00:00"),

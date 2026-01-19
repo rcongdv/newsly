@@ -221,11 +221,14 @@ class FFmpegVideoService:
                 vcodec="libx264",
                 acodec="aac",
                 pix_fmt="yuv420p",
+                preset="ultrafast",
                 shortest=None,
             )
 
             # Run FFmpeg
+            logger.info(f"Starting FFmpeg encoding (preset=ultrafast, duration={duration:.1f}s)...")
             output.overwrite_output().run(capture_stdout=True, capture_stderr=True)
+            logger.info("FFmpeg encoding completed")
 
         except ffmpeg.Error as e:
             stderr = e.stderr.decode() if e.stderr else "Unknown error"

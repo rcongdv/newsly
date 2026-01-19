@@ -25,9 +25,9 @@ class TestFFmpegVideoService:
         assert service._height == 1080
         assert service._background_color == "#1a1a2e"
         assert service._background_image is None
-        assert service._subtitle_font_size == 48
+        assert service._subtitle_font_size == 40
         assert service._subtitle_font_color == "white"
-        assert service._subtitle_max_chars == 60
+        assert service._subtitle_max_chars == 45
 
     def test_init_with_custom_values(self):
         """Test service initialization with custom values."""
@@ -74,6 +74,7 @@ class TestFFmpegVideoService:
     def test_get_audio_duration_failure(self, mock_run):
         """Test that audio duration failure raises VideoServiceError."""
         import subprocess
+
         mock_run.side_effect = subprocess.CalledProcessError(1, "ffprobe")
 
         service = FFmpegVideoService(output_path="output.mp4")
@@ -187,7 +188,9 @@ class TestFFmpegVideoService:
         mock_output.overwrite_output.return_value = mock_overwrite
         # Use the real ffmpeg.Error class
         mock_ffmpeg.Error = real_ffmpeg.Error
-        mock_overwrite.run.side_effect = real_ffmpeg.Error("cmd", b"stdout", b"FFmpeg error")
+        mock_overwrite.run.side_effect = real_ffmpeg.Error(
+            "cmd", b"stdout", b"FFmpeg error"
+        )
 
         service = FFmpegVideoService(output_path="output.mp4")
 

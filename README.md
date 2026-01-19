@@ -16,6 +16,10 @@ The API runs on `http://localhost:8000`.
 
 ### Environment Variables
 
+**API Security:**
+- `API_KEY` - Required API key for authenticating requests (set a strong random string)
+- `RATE_LIMIT_PER_MINUTE` - Max requests per minute per IP (default: `60`)
+
 **Google/Gmail:**
 - `GOOGLE_AUTH_CLIENT_ID` / `GOOGLE_AUTH_CLIENT_SECRET` - OAuth credentials
 - `GOOGLE_AUTH_REFRESH_TOKEN` - Run `scripts/generate_refresh_token.py` to get this
@@ -75,9 +79,17 @@ pytest tests/ -v
 
 ## API Endpoints
 
+All endpoints except health check require API key authentication via the `X-API-Key` header.
+
 - `POST /api/v1/email/new` - Gmail webhook endpoint (receives PubSub notifications)
 - `POST /api/v1/email/send` - Manually trigger summary generation
-- `GET /api/v1/health` - Health check
+- `GET /api/v1/health` - Health check (no auth required)
+
+Example request:
+```bash
+curl -X POST "http://localhost:8000/api/v1/email/send?period=morning" \
+  -H "X-API-Key: your-api-key-here"
+```
 
 ## Project Structure
 

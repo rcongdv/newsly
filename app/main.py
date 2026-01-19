@@ -11,10 +11,13 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.exceptions import NewslyException
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.db import get_database
 from app.integrations.gmail.client import create_gmail_client
 from app.middleware import (
@@ -65,10 +68,15 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Add middleware
+    # Configure rate limiter and attach to app state
+    app.state.limiter = limiter
+    app.add_middleware(SlowAPIMiddleware)
+
+    # Add request logging middleware
     app.add_middleware(RequestLoggingMiddleware)
 
     # Register exception handlers
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
     app.add_exception_handler(NewslyException, newsly_exception_handler)
     app.add_exception_handler(Exception, generic_exception_handler)
 

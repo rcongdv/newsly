@@ -1,8 +1,10 @@
 """FastAPI dependency injection setup."""
 
+import secrets
 from typing import Annotated, AsyncGenerator
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, Security, status
+from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -19,6 +21,32 @@ from app.services.summary_generator import SummaryGeneratorService
 
 # ============ Settings Dependency ============
 SettingsDep = Annotated[Settings, Depends(get_settings)]
+
+
+# ============ API Key Authentication ============
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def verify_api_key(
+    api_key: str | None = Security(api_key_header),
+    settings: Settings = Depends(get_settings),
+) -> str:
+    """Verify the API key from request header.
+
+    Raises HTTPException 401 if API key is missing or invalid.
+    Uses constant-time comparison to prevent timing attacks.
+    """
+    if not api_key or not secrets.compare_digest(api_key, settings.api_key):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key",
+            headers={"WWW-Authenticate": "API key"},
+        )
+
+    return api_key
+
+
+APIKeyDep = Annotated[str, Depends(verify_api_key)]
 
 
 # ============ Database Session Dependency ============
@@ -94,7 +122,9 @@ def get_email_processor_service(
     )
 
 
-EmailProcessorDep = Annotated[EmailProcessorService, Depends(get_email_processor_service)]
+EmailProcessorDep = Annotated[
+    EmailProcessorService, Depends(get_email_processor_service)
+]
 
 
 def get_summary_generator_service(
@@ -116,4 +146,6 @@ def get_summary_generator_service(
     )
 
 
-SummaryGeneratorDep = Annotated[SummaryGeneratorService, Depends(get_summary_generator_service)]
+SummaryGeneratorDep = Annotated[
+    SummaryGeneratorService, Depends(get_summary_generator_service)
+]

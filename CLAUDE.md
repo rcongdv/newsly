@@ -62,6 +62,13 @@ All tests use mocks - no external services needed.
 - `app/integrations/video/ffmpeg_video.py` - FFmpeg video implementation
 - `app/integrations/gmail/client.py` - Gmail API wrapper
 
+## Security
+
+- **API Key Authentication**: All endpoints (except health) require `X-API-Key` header
+- **Rate Limiting**: Uses slowapi with configurable per-minute limits per IP
+- **Constant-time comparison**: API keys compared using `secrets.compare_digest()` to prevent timing attacks
+- Key files: `app/core/dependencies.py` (auth), `app/core/rate_limit.py` (rate limiting)
+
 ## Notes
 
 - **TTS**: Uses ElevenLabs for high-quality text-to-speech with word-level timing for subtitles.

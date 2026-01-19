@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     debug: bool = False
     log_level: str = "INFO"
 
+    # ============ API Security ============
+    api_key: str  # Required for authenticated endpoints
+    rate_limit_per_minute: int = 3  # Max requests per minute per IP
+
     # ============ Timezone & Recipients ============
     timezone: str = "America/Los_Angeles"
     default_recipient: EmailStr = "richardcong635@gmail.com"
@@ -33,9 +37,9 @@ class Settings(BaseSettings):
     # ============ TTS (ElevenLabs) ============
     tts_output_format: str = "mp3"
     tts_output_file: str = "output"
-    elevenlabs_api_key: str = ""
+    elevenlabs_api_key: str
     elevenlabs_voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
-    elevenlabs_model_id: str = "eleven_multilingual_v2"
+    elevenlabs_model_id: str = "eleven_flash_v2_5"
 
     # ============ Video Generation ============
     video_enabled: bool = True
