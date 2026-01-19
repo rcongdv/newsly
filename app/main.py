@@ -16,6 +16,7 @@ from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.exceptions import NewslyException
 from app.db import get_database
+from app.integrations.gmail.client import create_gmail_client
 from app.middleware import (
     RequestLoggingMiddleware,
     newsly_exception_handler,
@@ -40,6 +41,15 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing database...")
     await get_database().init_db()
     logger.info("Database initialized.")
+
+    logger.info("Setting up Gmail watch...")
+    try:
+        settings = get_settings()
+        gmail_client = create_gmail_client(settings)
+        gmail_client.watch()
+        logger.info("Gmail watch established successfully.")
+    except Exception as e:
+        logger.error(f"Failed to set up Gmail watch: {e}")
 
     yield
 

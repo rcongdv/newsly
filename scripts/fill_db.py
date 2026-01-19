@@ -18,9 +18,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from app.email.gmail_auth import GmailAuth
+from app.core.config import get_settings
 from app.db.database import get_database
-from app.db.repository import EmailRepository
+from app.db.repositories.email import EmailRepository
+from app.integrations.gmail.auth import GmailAuth
 
 
 def list_all_message_ids(gmail) -> list[str]:
@@ -144,7 +145,12 @@ def fetch_and_parse_email(gmail, message_id: str) -> dict:
 
 async def main():
     print("Initializing Gmail connection...")
-    auth = GmailAuth()
+    settings = get_settings()
+    auth = GmailAuth(
+        client_id=settings.google_auth_client_id,
+        client_secret=settings.google_auth_client_secret,
+        refresh_token=settings.google_auth_refresh_token,
+    )
     creds = auth.get_credentials()
     gmail = build("gmail", "v1", credentials=creds)
 
