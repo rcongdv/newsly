@@ -12,6 +12,7 @@ class TimePeriod(str, Enum):
 
     MORNING = "morning"
     AFTERNOON = "afternoon"
+    WEEKEND = "weekend"
 
 
 class WebhookRequest(BaseModel):

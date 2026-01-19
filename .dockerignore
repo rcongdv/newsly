@@ -1,19 +1,56 @@
+# Environment
+.env
+.env.*
+
+# Credentials
 *.json
+*.crt
+*.pem
+*.key
+
+# Audio files
 *.mp3
 *.wav
 
+# Python
 *venv/
 __pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
 
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+
+# Git
 .git/
 .github/
-.vscode/
 .gitignore
+
+# IDE
+.idea/
+.vscode/
+
+# Docker
 .dockerignore
 Dockerfile
+docker-compose*.yml
 
-.pytest_cache/
+# macOS
+.DS_Store
 
+# Logs
+*.log
+fly.log
+
+# Docs
 README.md
+CLAUDE.md
+
+# Scripts
 scripts/
-tests/

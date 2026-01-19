@@ -65,6 +65,7 @@ class Settings(BaseSettings):
     time_frames: dict = {
         "morning": ("00:00:00", "06:00:00"),
         "afternoon": ("06:00:00", "13:30:00"),
+        "weekend": ("00:00:00", "09:00:00"),
     }
     time_format: str = "%H:%M:%S"
 

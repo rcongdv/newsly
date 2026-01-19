@@ -2,10 +2,12 @@ name: Daily Email Cron
 
 on:
   schedule:
-    # 6:00am PST = 14:00 UTC
-    - cron: "00 14 * * *"
-    # 1:30pm PST = 21:30 UTC
-    - cron: "30 21 * * *"
+    # 6:00am PST = 14:00 UTC (Mon-Fri)
+    - cron: "00 14 * * 1-5"
+    # 1:30pm PST = 21:30 UTC (Mon-Fri)
+    - cron: "30 21 * * 1-5"
+    # 9:00am PST = 17:00 UTC (Sat-Sun)
+    - cron: "00 17 * * 0,6"
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -14,8 +16,10 @@ jobs:
     steps:
       - name: Trigger email send
         run: |
-          if [ "${{ github.event.schedule }}" = "30 21 * * *" ]; then
+          if [ "${{ github.event.schedule }}" = "30 21 * * 1-5" ]; then
             PERIOD="afternoon"
+          elif [ "${{ github.event.schedule }}" = "00 17 * * 0,6" ]; then
+            PERIOD="weekend"
           else
             PERIOD="morning"
           fi
