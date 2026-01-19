@@ -10,9 +10,11 @@ import ffmpeg
 
 from app.core.config import Settings
 from app.core.exceptions import VideoServiceError
+from app.integrations.tts.base import WordTiming
 from app.integrations.video.subtitle import (
     generate_srt_content,
     split_text_into_segments,
+    word_timings_to_subtitles,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,9 +30,9 @@ class FFmpegVideoService:
         height: int = 1080,
         background_color: str = "#1a1a2e",
         background_image: str | None = None,
-        subtitle_font_size: int = 48,
+        subtitle_font_size: int = 40,
         subtitle_font_color: str = "white",
-        subtitle_max_chars: int = 60,
+        subtitle_max_chars: int = 45,
     ):
         """
         Initialize FFmpeg video service.
@@ -94,13 +96,19 @@ class FFmpegVideoService:
         escaped = escaped.replace("'", "\\'")
         return escaped
 
-    def create_video(self, audio_path: str, text: str) -> None:
+    def create_video(
+        self,
+        audio_path: str,
+        text: str,
+        word_timings: list[WordTiming] | None = None,
+    ) -> None:
         """
         Create a video with burned-in subtitles.
 
         Args:
             audio_path: Path to the audio file
-            text: Text content for generating subtitles
+            text: Text content for generating subtitles (fallback if no word_timings)
+            word_timings: Optional word-level timing data for accurate subtitles
 
         Raises:
             VideoServiceError: If video creation fails
@@ -111,12 +119,20 @@ class FFmpegVideoService:
         duration = self._get_audio_duration(audio_path)
         logger.info(f"Audio duration: {duration:.2f} seconds")
 
-        # Generate subtitles
-        subtitle_entries = split_text_into_segments(
-            text,
-            audio_duration=duration,
-            max_chars_per_line=self._subtitle_max_chars,
-        )
+        # Generate subtitles - use word timings if available, otherwise estimate
+        if word_timings:
+            logger.info("Using TTS word timings for accurate subtitles")
+            subtitle_entries = word_timings_to_subtitles(
+                word_timings,
+                max_chars_per_line=self._subtitle_max_chars,
+            )
+        else:
+            logger.info("No word timings available, using proportional estimation")
+            subtitle_entries = split_text_into_segments(
+                text,
+                audio_duration=duration,
+                max_chars_per_line=self._subtitle_max_chars,
+            )
         srt_content = generate_srt_content(subtitle_entries)
         logger.info(f"Generated {len(subtitle_entries)} subtitle segments")
 

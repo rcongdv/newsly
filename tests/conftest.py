@@ -14,12 +14,8 @@ os.environ.update(
         "GMAIL_PUBSUB_TOPIC_NAME": "projects/test/topics/test-topic",
         "GROK_API_KEY": "test-grok-key",
         "DATABASE_URL": "postgresql+asyncpg://user:pass@localhost/testdb",
-        "TTS_PROVIDER": "pytts",
+        "ELEVENLABS_API_KEY": "test-elevenlabs-key",
         "VIDEO_ENABLED": "true",
-        # Set default values for optional fields that might fail validation if empty
-        "GOOGLE_TTS_VOICE_GENDER": "NEUTRAL",
-        "GOOGLE_TTS_SPEAKING_RATE": "1.0",
-        "GOOGLE_TTS_PITCH": "0.0",
         "VIDEO_WIDTH": "1080",
         "VIDEO_HEIGHT": "1080",
         "SUBTITLE_FONT_SIZE": "48",

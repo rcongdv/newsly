@@ -25,18 +25,11 @@ The API runs on `http://localhost:8000`.
 - `GROK_API_KEY` - Your X.AI API key
 - `GROK_MODEL` - Model to use (defaults to latest)
 
-**TTS:**
-- `TTS_PROVIDER` - One of: `pytts`, `elevenlabs`, `google`
+**TTS (ElevenLabs):**
+- `ELEVENLABS_API_KEY` - Your ElevenLabs API key (required)
+- `ELEVENLABS_VOICE_ID` - Voice ID to use (default: `JBFqnCBsd6RMkjVDRZzb`)
+- `ELEVENLABS_MODEL_ID` - Model to use (default: `eleven_multilingual_v2`)
 - `TTS_OUTPUT_FORMAT` - `mp3`, `wav`, etc.
-- `TTS_LANGUAGE` - Language code (default: `en`)
-
-Provider-specific settings:
-
-| Provider | Variables | Notes |
-|----------|-----------|-------|
-| `pytts` | `PYTTS_VOICE_RATE`, `PYTTS_VOLUME`, `PYTTS_VOICE_ID` | Local, uses system TTS. Robotic on Linux (espeak). |
-| `elevenlabs` | `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` | Cloud, high quality, paid API. |
-| `google` | `GOOGLE_TTS_CREDENTIALS_PATH`, `GOOGLE_TTS_LANGUAGE_CODE`, `GOOGLE_TTS_VOICE_NAME`, `GOOGLE_TTS_VOICE_GENDER`, `GOOGLE_TTS_SPEAKING_RATE`, `GOOGLE_TTS_PITCH` | Cloud, high quality, pay-per-use. |
 
 **Video Generation (Optional):**
 - `VIDEO_ENABLED` - Set to `true` to generate MP4 videos with subtitles (default: `false`)
@@ -96,7 +89,7 @@ app/
 ├── integrations/       # External services
 │   ├── gmail/          # Gmail API client
 │   ├── ai/             # Grok summarization
-│   ├── tts/            # Text-to-speech (PyTTS, ElevenLabs, Google)
+│   ├── tts/            # Text-to-speech (ElevenLabs)
 │   └── video/          # Video generation with subtitles (FFmpeg)
 ├── schemas/            # Pydantic models
 └── services/           # Business logic

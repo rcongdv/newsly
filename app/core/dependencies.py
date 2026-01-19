@@ -10,8 +10,7 @@ from app.db.database import get_database
 from app.db.repositories.email import EmailRepository
 from app.integrations.gmail.client import GmailClient, create_gmail_client
 from app.integrations.ai.grok import GrokService, create_grok_service
-from app.integrations.tts.base import TTSService
-from app.integrations.tts.factory import TTSFactory
+from app.integrations.tts.elevenlabs import ElevenLabsService, create_elevenlabs_service
 from app.integrations.video.base import VideoService
 from app.integrations.video.factory import VideoFactory
 from app.services.email_processor import EmailProcessorService
@@ -65,12 +64,12 @@ def get_ai_service(settings: SettingsDep) -> GrokService:
 AIServiceDep = Annotated[GrokService, Depends(get_ai_service)]
 
 
-def get_tts_service(settings: SettingsDep) -> TTSService:
-    """Get TTS service instance based on settings."""
-    return TTSFactory.create_from_settings(settings)
+def get_tts_service(settings: SettingsDep) -> ElevenLabsService:
+    """Get TTS service instance."""
+    return create_elevenlabs_service(settings)
 
 
-TTSServiceDep = Annotated[TTSService, Depends(get_tts_service)]
+TTSServiceDep = Annotated[ElevenLabsService, Depends(get_tts_service)]
 
 
 def get_video_service(settings: SettingsDep) -> VideoService | None:

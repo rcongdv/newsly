@@ -2,10 +2,12 @@
 
 import pytest
 
+from app.integrations.tts.base import WordTiming
 from app.integrations.video.subtitle import (
     SubtitleEntry,
     split_text_into_segments,
     generate_srt_content,
+    word_timings_to_subtitles,
     _format_srt_time,
 )
 
@@ -191,3 +193,93 @@ class TestSubtitleEntry:
         entry2 = SubtitleEntry(1.0, 2.0, "Same")
 
         assert entry1 == entry2
+
+
+class TestWordTimingsToSubtitles:
+    """Tests for the word_timings_to_subtitles function."""
+
+    def test_empty_timings_returns_empty_list(self):
+        """Test that empty word timings returns empty list."""
+        result = word_timings_to_subtitles([])
+        assert result == []
+
+    def test_single_word(self):
+        """Test converting a single word timing."""
+        timings = [WordTiming(word="Hello", start_time=0.0, end_time=0.5)]
+        result = word_timings_to_subtitles(timings)
+
+        assert len(result) == 1
+        assert result[0].text == "Hello"
+        assert result[0].start_time == 0.0
+        assert result[0].end_time == 0.5
+
+    def test_multiple_words_single_segment(self):
+        """Test that multiple short words are grouped into one segment."""
+        timings = [
+            WordTiming(word="Hello", start_time=0.0, end_time=0.3),
+            WordTiming(word="world", start_time=0.4, end_time=0.7),
+        ]
+        result = word_timings_to_subtitles(timings)
+
+        assert len(result) == 1
+        assert result[0].text == "Hello world"
+        assert result[0].start_time == 0.0
+        assert result[0].end_time == 0.7
+
+    def test_respects_max_chars_per_line(self):
+        """Test that segments don't exceed max characters."""
+        timings = [
+            WordTiming(word="This", start_time=0.0, end_time=0.2),
+            WordTiming(word="is", start_time=0.3, end_time=0.4),
+            WordTiming(word="a", start_time=0.5, end_time=0.6),
+            WordTiming(word="test", start_time=0.7, end_time=0.9),
+            WordTiming(word="sentence", start_time=1.0, end_time=1.5),
+        ]
+        result = word_timings_to_subtitles(timings, max_chars_per_line=10)
+
+        # Should split because "This is a test" > 10 chars
+        assert len(result) >= 2
+
+    def test_respects_max_words_per_segment(self):
+        """Test that segments don't exceed max words."""
+        timings = [
+            WordTiming(word="One", start_time=0.0, end_time=0.1),
+            WordTiming(word="two", start_time=0.2, end_time=0.3),
+            WordTiming(word="three", start_time=0.4, end_time=0.5),
+            WordTiming(word="four", start_time=0.6, end_time=0.7),
+            WordTiming(word="five", start_time=0.8, end_time=0.9),
+        ]
+        result = word_timings_to_subtitles(timings, max_words_per_segment=3)
+
+        assert len(result) == 2
+        assert result[0].text == "One two three"
+        assert result[1].text == "four five"
+
+    def test_preserves_accurate_timing(self):
+        """Test that timing comes from actual word timings, not estimation."""
+        timings = [
+            WordTiming(word="First", start_time=0.5, end_time=1.0),
+            WordTiming(word="segment", start_time=1.2, end_time=1.8),
+            WordTiming(word="here", start_time=2.0, end_time=2.5),
+        ]
+        result = word_timings_to_subtitles(timings, max_words_per_segment=2)
+
+        assert len(result) == 2
+        # First segment timing from actual words
+        assert result[0].start_time == 0.5
+        assert result[0].end_time == 1.8
+        # Second segment timing
+        assert result[1].start_time == 2.0
+        assert result[1].end_time == 2.5
+
+    def test_handles_single_long_word(self):
+        """Test handling a single word that's very long."""
+        timings = [
+            WordTiming(word="Supercalifragilisticexpialidocious", start_time=0.0, end_time=2.0),
+            WordTiming(word="is", start_time=2.1, end_time=2.3),
+        ]
+        result = word_timings_to_subtitles(timings, max_chars_per_line=20)
+
+        # Long word should be its own segment
+        assert len(result) == 2
+        assert result[0].text == "Supercalifragilisticexpialidocious"

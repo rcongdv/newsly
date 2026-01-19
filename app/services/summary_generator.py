@@ -115,7 +115,15 @@ class SummaryGeneratorService:
         video_generated = False
         if self._video_service:
             logger.info("Generating video with subtitles...")
-            self._video_service.create_video(self._tts_service.output_path, summary)
+            # Pass word timings from TTS if available for accurate subtitle sync
+            word_timings = self._tts_service.word_timings
+            if word_timings:
+                logger.info(f"Passing {len(word_timings)} word timings to video service")
+            self._video_service.create_video(
+                self._tts_service.output_path,
+                summary,
+                word_timings=word_timings or None,
+            )
             attachments.append(self._video_service.output_path)
             video_generated = True
             logger.info(f"Video complete, attachment: {self._video_service.output_path}")

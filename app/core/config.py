@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import Literal
 
 from pydantic import EmailStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,29 +30,12 @@ class Settings(BaseSettings):
     grok_api_key: str
     grok_model: str = "grok-3-mini"
 
-    # ============ TTS General ============
-    tts_provider: Literal["pytts", "elevenlabs", "google"] = "pytts"
+    # ============ TTS (ElevenLabs) ============
     tts_output_format: str = "mp3"
     tts_output_file: str = "output"
-    tts_language: str = "en"
-
-    # ============ ElevenLabs TTS ============
     elevenlabs_api_key: str = ""
     elevenlabs_voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
     elevenlabs_model_id: str = "eleven_multilingual_v2"
-
-    # ============ PyTTS ============
-    pytts_voice_rate: int = 125
-    pytts_volume: float = 1.0
-    pytts_voice_id: str = "0"
-
-    # ============ Google Cloud TTS ============
-    google_tts_credentials_path: str | None = None  # Path to service account JSON
-    google_tts_language_code: str = "en-US"
-    google_tts_voice_name: str | None = None  # e.g., "en-US-Neural2-A"
-    google_tts_voice_gender: Literal["NEUTRAL", "MALE", "FEMALE"] = "NEUTRAL"
-    google_tts_speaking_rate: float = 1.0  # 0.25 to 4.0
-    google_tts_pitch: float = 0.0  # -20.0 to 20.0 semitones
 
     # ============ Video Generation ============
     video_enabled: bool = True
@@ -65,9 +47,9 @@ class Settings(BaseSettings):
     video_height: int = 1080
 
     # ============ Subtitles ============
-    subtitle_font_size: int = 48
+    subtitle_font_size: int = 40
     subtitle_font_color: str = "white"
-    subtitle_max_chars_per_line: int = 60
+    subtitle_max_chars_per_line: int = 45
 
     # ============ Database ============
     database_url: str
