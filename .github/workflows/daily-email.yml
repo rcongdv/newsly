@@ -24,6 +24,7 @@ jobs:
             PERIOD="morning"
           fi
           curl -X POST "https://newsly.fly.dev/api/v1/email/send?period=${PERIOD}" \
+            -H "X-API-Key: ${{ secrets.API_KEY }}" \
             --fail \
             --silent \
             --show-error

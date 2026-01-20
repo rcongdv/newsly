@@ -33,7 +33,7 @@ def test_send_summary_endpoint_missing_api_key(client):
 
     assert response.status_code == 401
     data = response.json()
-    assert data["detail"] == "Invalid API key"
+    assert data["detail"] == "Invalid authentication"
 
 
 def test_send_summary_endpoint_invalid_api_key(client):
@@ -46,7 +46,7 @@ def test_send_summary_endpoint_invalid_api_key(client):
 
     assert response.status_code == 401
     data = response.json()
-    assert data["detail"] == "Invalid API key"
+    assert data["detail"] == "Invalid authentication"
 
 
 def test_send_summary_endpoint_validation_error(client):
@@ -132,4 +132,4 @@ async def test_webhook_endpoint_missing_api_key(client):
 
     assert response.status_code == 401
     data = response.json()
-    assert data["detail"] == "Invalid API key"
+    assert data["detail"] == "Invalid authentication"

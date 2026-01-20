@@ -18,7 +18,11 @@ class Settings(BaseSettings):
 
     # ============ API Security ============
     api_key: str  # Required for authenticated endpoints
-    rate_limit_per_minute: int = 3  # Max requests per minute per IP
+    rate_limit_per_minute: int = 30  # Max requests per minute per IP
+
+    # ============ Pub/Sub OIDC Authentication ============
+    pubsub_service_account_email: str
+    pubsub_audience: str
 
     # ============ Timezone & Recipients ============
     timezone: str = "America/Los_Angeles"

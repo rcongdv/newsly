@@ -1,10 +1,13 @@
 """FastAPI dependency injection setup."""
 
+import logging
 import secrets
 from typing import Annotated, AsyncGenerator
 
-from fastapi import Depends, HTTPException, Security, status
-from fastapi.security import APIKeyHeader
+from fastapi import Depends, HTTPException, Request, Security, status
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -23,30 +26,77 @@ from app.services.summary_generator import SummaryGeneratorService
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 
-# ============ API Key Authentication ============
+# ============ Authentication ============
+logger = logging.getLogger(__name__)
+
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
-def verify_api_key(
-    api_key: str | None = Security(api_key_header),
-    settings: Settings = Depends(get_settings),
-) -> str:
-    """Verify the API key from request header.
+def _verify_api_key(api_key: str | None, settings: Settings) -> bool:
+    """Verify API key using constant-time comparison."""
+    if not api_key:
+        return False
+    return secrets.compare_digest(api_key, settings.api_key)
 
-    Raises HTTPException 401 if API key is missing or invalid.
-    Uses constant-time comparison to prevent timing attacks.
+
+def _verify_oidc_token(token: str, settings: Settings) -> bool:
+    """Verify Google OIDC token from Pub/Sub push requests.
+
+    Returns True if token is valid and from expected service account.
     """
-    if not api_key or not secrets.compare_digest(api_key, settings.api_key):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid API key",
-            headers={"WWW-Authenticate": "API key"},
+    if not settings.pubsub_service_account_email:
+        return False
+
+    try:
+        claims = id_token.verify_oauth2_token(
+            token,
+            google_requests.Request(),
+            audience=settings.pubsub_audience,
         )
 
-    return api_key
+        # Verify the token is from the expected service account
+        email = claims.get("email", "")
+        if email == settings.pubsub_service_account_email:
+            return True
+
+        logger.warning(f"OIDC token email mismatch: expected {settings.pubsub_service_account_email}, got {email}")
+        return False
+
+    except Exception as e:
+        logger.warning(f"OIDC token verification failed: {e}")
+        return False
 
 
-APIKeyDep = Annotated[str, Depends(verify_api_key)]
+def verify_auth(
+    api_key: str | None = Security(api_key_header),
+    bearer: HTTPAuthorizationCredentials | None = Security(bearer_scheme),
+    settings: Settings = Depends(get_settings),
+) -> str:
+    """Verify authentication via API key OR OIDC token.
+
+    Accepts either:
+    - X-API-Key header with valid API key
+    - Authorization: Bearer <token> with valid Google OIDC token (for Pub/Sub)
+
+    Raises HTTPException 401 if neither is valid.
+    """
+    # Try API key first
+    if _verify_api_key(api_key, settings):
+        return "api_key"
+
+    # Try OIDC token
+    if bearer and _verify_oidc_token(bearer.credentials, settings):
+        return "oidc"
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid authentication",
+        headers={"WWW-Authenticate": "Bearer, API-Key"},
+    )
+
+
+APIKeyDep = Annotated[str, Depends(verify_auth)]
 
 
 # ============ Database Session Dependency ============
