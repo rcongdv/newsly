@@ -1,18 +1,13 @@
 import asyncio
 import logging
-from uuid import uuid4
-from asyncpg import Connection
+
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
-
-
-class PGBouncerConnection(Connection):
-    def _get_unique_id(self, prefix: str) -> str:
-        return f"__asyncpg_{prefix}_{uuid4()}__"
 
 
 class Base(DeclarativeBase):
@@ -35,21 +30,20 @@ class Database:
                 "postgresql://", "postgresql+asyncpg://", 1
             )
 
+        # PgBouncer compatibility: disable all statement caching
         connect_args = {
             "command_timeout": 60,
             "statement_cache_size": 0,
-            "connection_class": PGBouncerConnection,
+            "prepared_statement_cache_size": 0,
         }
 
+        # Use NullPool - PgBouncer handles connection pooling, so SQLAlchemy
+        # shouldn't maintain its own pool (which causes prepared statement issues)
         self.engine = create_async_engine(
             database_url,
             echo=False,
             connect_args=connect_args,
-            pool_pre_ping=True,
-            pool_recycle=300,
-            pool_size=5,
-            max_overflow=10,
-            pool_timeout=30,
+            poolclass=NullPool,
         )
         self.async_session = async_sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False

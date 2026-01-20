@@ -1,6 +1,6 @@
 # Newsly
 
-Turns your newsletter emails into audio summaries. Connects to Gmail, uses Grok to summarize the content, converts it to speech, and emails you the audio file.
+Turns your newsletter emails into audio summaries. Connects to Gmail, uses Grok to summarize the content, converts it to speech, and emails you the audio file. Optionally generates video with burned-in subtitles.
 
 ## Setup
 
@@ -16,6 +16,10 @@ The API runs on `http://localhost:8000`.
 
 ### Environment Variables
 
+**API Security:**
+- `API_KEY` - Required API key for authenticating requests (set a strong random string)
+- `RATE_LIMIT_PER_MINUTE` - Max requests per minute per IP (default: `60`)
+
 **Google/Gmail:**
 - `GOOGLE_AUTH_CLIENT_ID` / `GOOGLE_AUTH_CLIENT_SECRET` - OAuth credentials
 - `GOOGLE_AUTH_REFRESH_TOKEN` - Run `scripts/generate_refresh_token.py` to get this
@@ -25,18 +29,24 @@ The API runs on `http://localhost:8000`.
 - `GROK_API_KEY` - Your X.AI API key
 - `GROK_MODEL` - Model to use (defaults to latest)
 
-**TTS:**
-- `TTS_PROVIDER` - One of: `pytts`, `elevenlabs`, `google`
+**TTS (ElevenLabs):**
+- `ELEVENLABS_API_KEY` - Your ElevenLabs API key (required)
+- `ELEVENLABS_VOICE_ID` - Voice ID to use (default: `JBFqnCBsd6RMkjVDRZzb`)
+- `ELEVENLABS_MODEL_ID` - Model to use (default: `eleven_multilingual_v2`)
 - `TTS_OUTPUT_FORMAT` - `mp3`, `wav`, etc.
-- `TTS_LANGUAGE` - Language code (default: `en`)
 
-Provider-specific settings:
+**Video Generation (Optional):**
+- `VIDEO_ENABLED` - Set to `true` to generate MP4 videos with subtitles (default: `false`)
+- `VIDEO_OUTPUT_FORMAT` - Video format (default: `mp4`)
+- `VIDEO_OUTPUT_FILE` - Output filename without extension (default: `output`)
+- `VIDEO_BACKGROUND_COLOR` - Hex color for video background (default: `#1a1a2e`)
+- `VIDEO_BACKGROUND_IMAGE` - Optional path to background image
+- `VIDEO_WIDTH` / `VIDEO_HEIGHT` - Video dimensions (default: `1080x1080`)
+- `SUBTITLE_FONT_SIZE` - Font size for subtitles (default: `48`)
+- `SUBTITLE_FONT_COLOR` - Subtitle text color (default: `white`)
+- `SUBTITLE_MAX_CHARS_PER_LINE` - Max characters per subtitle line (default: `60`)
 
-| Provider | Variables | Notes |
-|----------|-----------|-------|
-| `pytts` | `PYTTS_VOICE_RATE`, `PYTTS_VOLUME`, `PYTTS_VOICE_ID` | Local, uses system TTS. Robotic on Linux (espeak). |
-| `elevenlabs` | `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` | Cloud, high quality, paid API. |
-| `google` | `GOOGLE_TTS_CREDENTIALS_PATH`, `GOOGLE_TTS_LANGUAGE_CODE`, `GOOGLE_TTS_VOICE_NAME`, `GOOGLE_TTS_VOICE_GENDER`, `GOOGLE_TTS_SPEAKING_RATE`, `GOOGLE_TTS_PITCH` | Cloud, high quality, pay-per-use. |
+When enabled, both MP3 audio and MP4 video are attached to the summary email.
 
 **Database:**
 - `DATABASE_URL` - PostgreSQL connection string
@@ -69,9 +79,17 @@ pytest tests/ -v
 
 ## API Endpoints
 
+All endpoints except health check require API key authentication via the `X-API-Key` header.
+
 - `POST /api/v1/email/new` - Gmail webhook endpoint (receives PubSub notifications)
 - `POST /api/v1/email/send` - Manually trigger summary generation
-- `GET /api/v1/health` - Health check
+- `GET /api/v1/health` - Health check (no auth required)
+
+Example request:
+```bash
+curl -X POST "http://localhost:8000/api/v1/email/send?period=morning" \
+  -H "X-API-Key: your-api-key-here"
+```
 
 ## Project Structure
 
@@ -83,7 +101,8 @@ app/
 ├── integrations/       # External services
 │   ├── gmail/          # Gmail API client
 │   ├── ai/             # Grok summarization
-│   └── tts/            # Text-to-speech (PyTTS, ElevenLabs, Google)
+│   ├── tts/            # Text-to-speech (ElevenLabs)
+│   └── video/          # Video generation with subtitles (FFmpeg)
 ├── schemas/            # Pydantic models
 └── services/           # Business logic
 ```

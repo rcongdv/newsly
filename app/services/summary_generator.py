@@ -9,6 +9,7 @@ from app.db.repositories.email import EmailRepository
 from app.integrations.gmail.client import GmailClient
 from app.integrations.ai.grok import GrokService
 from app.integrations.tts.base import TTSService
+from app.integrations.video.base import VideoService
 from app.schemas.email import SendSummaryRequest, SendSummaryResponse
 
 logger = logging.getLogger(__name__)
@@ -24,12 +25,14 @@ class SummaryGeneratorService:
         gmail_client: GmailClient,
         ai_service: GrokService,
         tts_service: TTSService,
+        video_service: VideoService | None = None,
     ):
         self._settings = settings
         self._email_repo = email_repository
         self._gmail_client = gmail_client
         self._ai_service = ai_service
         self._tts_service = tts_service
+        self._video_service = video_service
 
     async def generate_and_send(
         self, request: SendSummaryRequest
@@ -108,6 +111,23 @@ class SummaryGeneratorService:
         attachments = [self._tts_service.output_path]
         logger.info(f"TTS complete, attachment: {self._tts_service.output_path}")
 
+        # Generate video if enabled
+        video_generated = False
+        if self._video_service:
+            logger.info("Generating video with subtitles...")
+            # Pass word timings from TTS if available for accurate subtitle sync
+            word_timings = self._tts_service.word_timings
+            if word_timings:
+                logger.info(f"Passing {len(word_timings)} word timings to video service")
+            self._video_service.create_video(
+                self._tts_service.output_path,
+                summary,
+                word_timings=word_timings or None,
+            )
+            attachments.append(self._video_service.output_path)
+            video_generated = True
+            logger.info(f"Video complete, attachment: {self._video_service.output_path}")
+
         # Send email
         logger.info(f"Sending summary email to {recipient}...")
         self._gmail_client.send_email(
@@ -123,6 +143,7 @@ class SummaryGeneratorService:
             emails_processed=len(emails),
             summary_length=len(summary),
             audio_generated=True,
+            video_generated=video_generated,
         )
 
     def _build_date_range(

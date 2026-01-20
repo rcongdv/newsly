@@ -6,7 +6,8 @@ Newsletter-to-audio service. Fetches emails from Gmail, summarizes with Grok AI,
 
 - Python 3.12, FastAPI, async SQLAlchemy with PostgreSQL
 - Grok (xai_sdk) for AI summarization
-- TTS: PyTTS, ElevenLabs, Google Cloud TTS
+- TTS: ElevenLabs
+- Video: FFmpeg with burned-in subtitles (optional)
 - Gmail API for email fetch/send
 - Deployed on Fly.io
 
@@ -20,7 +21,8 @@ app/
 ├── integrations/
 │   ├── gmail/           # Gmail API client
 │   ├── ai/              # Grok service
-│   └── tts/             # TTS factory + providers (pytts, elevenlabs, google_tts)
+│   ├── tts/             # ElevenLabs TTS service
+│   └── video/           # Video generation with subtitles (ffmpeg)
 ├── schemas/             # Pydantic request/response models
 ├── services/            # Business logic (summary_generator.py)
 └── main.py              # FastAPI app entrypoint
@@ -28,10 +30,10 @@ app/
 
 ## Patterns
 
-- **Factory pattern** for TTS providers (`TTSFactory.create()`)
+- **Factory pattern** for video service (`VideoFactory.create()`)
 - **Repository pattern** for database access (`EmailRepository`)
 - **Dependency injection** via FastAPI's `Depends()`
-- **Protocol classes** for TTS service interface
+- **Protocol classes** for TTS and video service interfaces
 
 ## Running
 
@@ -55,12 +57,22 @@ All tests use mocks - no external services needed.
 
 - `app/core/config.py` - All env vars and settings
 - `app/services/summary_generator.py` - Main orchestration logic
-- `app/integrations/tts/base.py` - TTS factory and protocol
+- `app/integrations/tts/base.py` - TTS protocol and data classes
+- `app/integrations/video/base.py` - Video service protocol
+- `app/integrations/video/ffmpeg_video.py` - FFmpeg video implementation
 - `app/integrations/gmail/client.py` - Gmail API wrapper
+
+## Security
+
+- **API Key Authentication**: All endpoints (except health) require `X-API-Key` header
+- **Rate Limiting**: Uses slowapi with configurable per-minute limits per IP
+- **Constant-time comparison**: API keys compared using `secrets.compare_digest()` to prevent timing attacks
+- Key files: `app/core/dependencies.py` (auth), `app/core/rate_limit.py` (rate limiting)
 
 ## Notes
 
-- **TTS providers**: PyTTS uses espeak-ng on Linux (robotic). For better quality in Docker, use ElevenLabs or Google Cloud TTS.
+- **TTS**: Uses ElevenLabs for high-quality text-to-speech with word-level timing for subtitles.
+- **Video generation**: Optional feature that creates MP4 with burned-in subtitles. Enable with `VIDEO_ENABLED=true`. Uses FFmpeg (already in Dockerfile).
 - Database uses asyncpg with connection pooling (PGBouncer compatible).
 - Gmail uses OAuth2 with refresh tokens. Run `scripts/generate_refresh_token.py` to get one.
 - Email filtering via `EMAIL_WHITELIST` env var (comma-separated sender domains).
@@ -97,15 +109,20 @@ All tests use mocks - no external services needed.
 - Use descriptive names with appropriate prefixes (e.g., `GMAIL_`, `TTS_`)
 - Document required vs optional variables
 
-### Adding New TTS Providers
-- Implement the `TTSService` protocol from `app/integrations/tts/base.py`
-- Register in `TTSFactory.create()` method
-- Add provider to `TTSProvider` enum in config
+### TTS Configuration
+- ElevenLabs is the sole TTS provider
+- Configure via `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` env vars
+- Service provides word-level timing data for subtitle generation
+
+### Adding New Video Providers
+- Implement the `VideoService` protocol from `app/integrations/video/base.py`
+- Register in `VideoFactory.create()` method
 - Include corresponding tests
+- Follow the pattern established by `FFmpegVideoService`
 
 ### Testing
 - New features and integrations must have corresponding tests in `tests/`
-- Follow existing test patterns (see `test_elevenlabs.py`, `test_pytts.py` for examples)
+- Follow existing test patterns (see `test_elevenlabs.py` for examples)
 - Use mocks for external services - no real API calls in tests
 - Test both success paths and error handling
 - Include tests for factory functions that create services from settings

@@ -132,7 +132,6 @@ class TestCreateGrokService:
         mock_settings = MagicMock()
         mock_settings.grok_api_key = "settings-api-key"
         mock_settings.grok_model = "settings-model"
-        mock_settings.tts_language = "en"
 
         mock_chat = MagicMock()
         mock_client.return_value.chat.create.return_value = mock_chat

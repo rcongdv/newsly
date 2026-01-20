@@ -2,6 +2,8 @@
 
 import logging
 
+from sqlalchemy.exc import IntegrityError
+
 from app.core.config import Settings
 from app.db.repositories.email import EmailRepository
 from app.integrations.gmail.client import GmailClient
@@ -55,15 +57,24 @@ class EmailProcessorService:
             f"sender='{latest_email.sender_email}'"
         )
 
-        await self._email_repo.create(
-            gmail_id=latest_email.gmail_id,
-            sender_name=latest_email.sender_name,
-            sender_email=latest_email.sender_email,
-            subject=latest_email.subject,
-            body_html=latest_email.body_html,
-            body_text=latest_email.body_text,
-            email_date=latest_email.email_date,
-        )
+        try:
+            await self._email_repo.create(
+                gmail_id=latest_email.gmail_id,
+                sender_name=latest_email.sender_name,
+                sender_email=latest_email.sender_email,
+                subject=latest_email.subject,
+                body_html=latest_email.body_html,
+                body_text=latest_email.body_text,
+                email_date=latest_email.email_date,
+            )
+        except IntegrityError:
+            # Race condition: another request already inserted this email
+            logger.info(f"Email already saved by concurrent request: {latest_email.gmail_id}")
+            return WebhookResponse(
+                message="Email already processed",
+                email_id=latest_email.gmail_id,
+                already_processed=True,
+            )
 
         logger.info(f"Email saved successfully: {latest_email.gmail_id}")
         return WebhookResponse(

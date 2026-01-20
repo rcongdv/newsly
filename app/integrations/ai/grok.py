@@ -37,11 +37,16 @@ class GrokService:
         self._client = Client(api_key=api_key)
 
         # Load system prompt once at initialization
-        prompt_path = system_prompt_path or Path(__file__).parent.parent.parent / "ai" / "system_prompt.md"
+        prompt_path = (
+            system_prompt_path
+            or Path(__file__).parent.parent.parent / "ai" / "system_prompt.md"
+        )
         if prompt_path.exists():
             self._system_prompt = prompt_path.read_text().strip()
         else:
-            self._system_prompt = "You are a helpful assistant that summarizes news content."
+            self._system_prompt = (
+                "You are a helpful assistant that summarizes news content."
+            )
             logger.warning(f"System prompt not found at {prompt_path}, using default")
 
         if language == "ch":
@@ -80,8 +85,4 @@ class GrokService:
 
 def create_grok_service(settings: Settings) -> GrokService:
     """Factory function to create GrokService from settings."""
-    return GrokService(
-        api_key=settings.grok_api_key,
-        model=settings.grok_model,
-        language=settings.tts_language,
-    )
+    return GrokService(api_key=settings.grok_api_key, model=settings.grok_model)

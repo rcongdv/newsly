@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import Literal
 
 from pydantic import EmailStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,6 +16,14 @@ class Settings(BaseSettings):
     debug: bool = False
     log_level: str = "INFO"
 
+    # ============ API Security ============
+    api_key: str  # Required for authenticated endpoints
+    rate_limit_per_minute: int = 30  # Max requests per minute per IP
+
+    # ============ Pub/Sub OIDC Authentication ============
+    pubsub_service_account_email: str
+    pubsub_audience: str
+
     # ============ Timezone & Recipients ============
     timezone: str = "America/Los_Angeles"
     default_recipient: EmailStr = "richardcong635@gmail.com"
@@ -31,29 +38,26 @@ class Settings(BaseSettings):
     grok_api_key: str
     grok_model: str = "grok-3-mini"
 
-    # ============ TTS General ============
-    tts_provider: Literal["pytts", "elevenlabs", "google"] = "pytts"
+    # ============ TTS (ElevenLabs) ============
     tts_output_format: str = "mp3"
     tts_output_file: str = "output"
-    tts_language: str = "en"
-
-    # ============ ElevenLabs TTS ============
-    elevenlabs_api_key: str = ""
+    elevenlabs_api_key: str
     elevenlabs_voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
-    elevenlabs_model_id: str = "eleven_multilingual_v2"
+    elevenlabs_model_id: str = "eleven_flash_v2_5"
 
-    # ============ PyTTS ============
-    pytts_voice_rate: int = 125
-    pytts_volume: float = 1.0
-    pytts_voice_id: str = "0"
+    # ============ Video Generation ============
+    video_enabled: bool = True
+    video_output_format: str = "mp4"
+    video_output_file: str = "output"
+    video_background_color: str = "#1a1a2e"
+    video_background_image: str | None = None
+    video_width: int = 1080
+    video_height: int = 1080
 
-    # ============ Google Cloud TTS ============
-    google_tts_credentials_path: str | None = None  # Path to service account JSON
-    google_tts_language_code: str = "en-US"
-    google_tts_voice_name: str | None = None  # e.g., "en-US-Neural2-A"
-    google_tts_voice_gender: Literal["NEUTRAL", "MALE", "FEMALE"] = "NEUTRAL"
-    google_tts_speaking_rate: float = 1.0  # 0.25 to 4.0
-    google_tts_pitch: float = 0.0  # -20.0 to 20.0 semitones
+    # ============ Subtitles ============
+    subtitle_font_size: int = 40
+    subtitle_font_color: str = "white"
+    subtitle_max_chars_per_line: int = 45
 
     # ============ Database ============
     database_url: str
@@ -75,6 +79,10 @@ class Settings(BaseSettings):
     @property
     def tts_output_path(self) -> str:
         return f"{self.tts_output_file}.{self.tts_output_format}"
+
+    @property
+    def video_output_path(self) -> str:
+        return f"{self.video_output_file}.{self.video_output_format}"
 
     @property
     def email_domain_whitelist_list(self) -> list[str]:
