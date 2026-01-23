@@ -1,11 +1,11 @@
 # Newsly
 
-Newsletter-to-audio service. Fetches emails from Gmail, summarizes with Grok AI, converts to speech, sends back via email.
+Newsletter-to-audio service. Fetches emails from Gmail, summarizes with AI (Grok or Gemini), converts to speech, sends back via email.
 
 ## Stack
 
 - Python 3.12, FastAPI, async SQLAlchemy with PostgreSQL
-- Grok (xai_sdk) for AI summarization
+- AI: Grok (xai_sdk) or Gemini (google-genai) for summarization
 - TTS: ElevenLabs
 - Video: FFmpeg with burned-in subtitles (optional)
 - Gmail API for email fetch/send
@@ -20,7 +20,7 @@ app/
 ├── db/                  # database.py, models.py, repository.py
 ├── integrations/
 │   ├── gmail/           # Gmail API client
-│   ├── ai/              # Grok service
+│   ├── ai/              # AI services (Grok, Gemini) with factory
 │   ├── tts/             # ElevenLabs TTS service
 │   └── video/           # Video generation with subtitles (ffmpeg)
 ├── schemas/             # Pydantic request/response models
@@ -30,7 +30,7 @@ app/
 
 ## Patterns
 
-- **Factory pattern** for video service (`VideoFactory.create()`)
+- **Factory pattern** for AI service (`AIFactory.create()`) and video service (`VideoFactory.create()`)
 - **Repository pattern** for database access (`EmailRepository`)
 - **Dependency injection** via FastAPI's `Depends()`
 - **Protocol classes** for TTS and video service interfaces
@@ -108,6 +108,21 @@ All tests use mocks - no external services needed.
 - Define all env vars in `app/core/config.py` using Pydantic Settings
 - Use descriptive names with appropriate prefixes (e.g., `GMAIL_`, `TTS_`)
 - Document required vs optional variables
+
+### AI Provider Configuration
+- Supports Grok and Gemini providers via `AI_PROVIDER` env var ("grok" or "gemini")
+- Factory pattern: `AIFactory.create(settings)` returns the configured provider
+- Both providers implement the `AIService` protocol from `app/integrations/ai/base.py`
+- Key files: `app/integrations/ai/grok.py`, `app/integrations/ai/gemini.py`, `app/integrations/ai/factory.py`
+- Grok config: `GROK_API_KEY`, `GROK_MODEL`
+- Gemini config: `GEMINI_API_KEY`, `GEMINI_MODEL`
+
+### Adding New AI Providers
+- Implement the `AIService` protocol from `app/integrations/ai/base.py`
+- Add factory function: `create_<provider>_service(settings)`
+- Register in `AIFactory.create()` method
+- Include corresponding tests following `test_grok.py` patterns
+- Ensure concurrency safety: create new model instance per `summarize()` call
 
 ### TTS Configuration
 - ElevenLabs is the sole TTS provider

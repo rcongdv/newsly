@@ -12,7 +12,9 @@ os.environ.update(
         "GOOGLE_AUTH_CLIENT_SECRET": "test-client-secret",
         "GOOGLE_AUTH_REFRESH_TOKEN": "test-refresh-token",
         "GMAIL_PUBSUB_TOPIC_NAME": "projects/test/topics/test-topic",
+        "AI_PROVIDER": "grok",
         "GROK_API_KEY": "test-grok-key",
+        "GEMINI_API_KEY": "test-gemini-key",
         "DATABASE_URL": "postgresql+asyncpg://user:pass@localhost/testdb",
         "ELEVENLABS_API_KEY": "test-elevenlabs-key",
         "API_KEY": "test-api-key-12345",
@@ -34,7 +36,7 @@ from app.main import app
 from app.core.config import Settings, get_settings
 from app.db.repositories.email import EmailRepository
 from app.integrations.gmail.client import GmailClient
-from app.integrations.ai.grok import GrokService
+from app.integrations.ai.base import AIService
 from app.integrations.tts.base import TTSService
 from app.integrations.video.base import VideoService
 from app.core.dependencies import (
@@ -108,7 +110,7 @@ def mock_gmail_client() -> MagicMock:
 @pytest.fixture
 def mock_ai_service() -> MagicMock:
     """Create a mock AI service."""
-    service = MagicMock(spec=GrokService)
+    service = MagicMock(spec=AIService)
     service.summarize.return_value = "Test Summary"
     return service
 

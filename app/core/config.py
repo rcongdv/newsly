@@ -34,9 +34,16 @@ class Settings(BaseSettings):
     google_auth_refresh_token: str
     gmail_pubsub_topic_name: str
 
+    # ============ AI Provider Selection ============
+    ai_provider: str = "grok"  # "grok" or "gemini"
+
     # ============ Grok AI ============
-    grok_api_key: str
+    grok_api_key: str = ""
     grok_model: str = "grok-3-mini"
+
+    # ============ Gemini AI ============
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
 
     # ============ TTS (ElevenLabs) ============
     tts_output_format: str = "mp3"

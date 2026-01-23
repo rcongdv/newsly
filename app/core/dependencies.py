@@ -14,7 +14,8 @@ from app.core.config import Settings, get_settings
 from app.db.database import get_database
 from app.db.repositories.email import EmailRepository
 from app.integrations.gmail.client import GmailClient, create_gmail_client
-from app.integrations.ai.grok import GrokService, create_grok_service
+from app.integrations.ai.base import AIService
+from app.integrations.ai.factory import AIFactory
 from app.integrations.tts.elevenlabs import ElevenLabsService, create_elevenlabs_service
 from app.integrations.video.base import VideoService
 from app.integrations.video.factory import VideoFactory
@@ -129,17 +130,18 @@ def get_gmail_client(settings: SettingsDep) -> GmailClient:
 GmailClientDep = Annotated[GmailClient, Depends(get_gmail_client)]
 
 
-def get_ai_service(settings: SettingsDep) -> GrokService:
+def get_ai_service(settings: SettingsDep) -> AIService:
     """
     Get AI service instance.
 
+    Uses AIFactory to select provider based on settings.ai_provider.
     IMPORTANT: Creates new instance per request to fix concurrency bug.
     The original global singleton shared chat state between requests.
     """
-    return create_grok_service(settings)
+    return AIFactory.create(settings)
 
 
-AIServiceDep = Annotated[GrokService, Depends(get_ai_service)]
+AIServiceDep = Annotated[AIService, Depends(get_ai_service)]
 
 
 def get_tts_service(settings: SettingsDep) -> ElevenLabsService:

@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from app.core.config import Settings
 from app.db.repositories.email import EmailRepository
 from app.integrations.gmail.client import GmailClient
-from app.integrations.ai.grok import GrokService
+from app.integrations.ai.base import AIService
 from app.integrations.tts.base import TTSService
 from app.integrations.video.base import VideoService
 from app.schemas.email import SendSummaryRequest, SendSummaryResponse
@@ -23,7 +23,7 @@ class SummaryGeneratorService:
         settings: Settings,
         email_repository: EmailRepository,
         gmail_client: GmailClient,
-        ai_service: GrokService,
+        ai_service: AIService,
         tts_service: TTSService,
         video_service: VideoService | None = None,
     ):
