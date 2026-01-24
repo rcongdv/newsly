@@ -58,8 +58,8 @@ class Settings(BaseSettings):
     video_output_file: str = "output"
     video_background_color: str = "#1a1a2e"
     video_background_image: str | None = None
-    video_width: int = 1080
-    video_height: int = 1080
+    video_width: int = 720
+    video_height: int = 720
 
     # ============ Subtitles ============
     subtitle_font_size: int = 40
