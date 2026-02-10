@@ -11,7 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN python -m venv .venv
 COPY requirements.txt ./
+# Install CPU-only PyTorch first (pocket-tts dependency) to avoid pulling
+# the massive CUDA-enabled build (~2GB). CPU-only is ~200MB instead.
 RUN .venv/bin/pip install --upgrade pip && \
+    .venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cpu && \
     .venv/bin/pip install -r requirements.txt
 
 FROM python:3.12-slim

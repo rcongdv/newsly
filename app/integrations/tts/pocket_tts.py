@@ -1,9 +1,12 @@
 """Pocket TTS service implementation (local/CPU-based TTS by Kyutai)."""
 
 import logging
+import os
+import tempfile
 
 import scipy.io.wavfile
 from pocket_tts import TTSModel
+from pydub import AudioSegment
 
 from app.core.config import Settings
 from app.core.exceptions import TTSServiceError
@@ -14,6 +17,10 @@ logger = logging.getLogger(__name__)
 
 class PocketTTSService:
     """Pocket TTS text-to-speech service (local CPU-based, no API key required).
+
+    Pocket TTS generates WAV natively. The output is then converted to MP3
+    to keep file sizes small enough for email attachments (WAV is uncompressed
+    and would exceed Gmail's size limits for anything beyond short clips).
 
     Note: Word-level timing is not supported by Pocket TTS.
     The word_timings property always returns an empty list.
@@ -42,16 +49,31 @@ class PocketTTSService:
         return self._word_timings
 
     def text_to_speech(self, text: str) -> None:
-        """Generate TTS audio with Pocket TTS and save as WAV."""
+        """Generate TTS audio with Pocket TTS.
+
+        Generates WAV internally, then converts to MP3 for the final output
+        to keep file sizes manageable for email delivery.
+        """
         logger.info("Generating TTS audio with Pocket TTS")
         try:
             audio = self._model.generate_audio(self._voice_state, text)
-            scipy.io.wavfile.write(
-                self._output_path,
-                self._model.sample_rate,
-                audio.numpy(),
-            )
-            logger.info(f"TTS audio saved to {self._output_path}")
+
+            # Write WAV to a temp file, then convert to MP3
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                tmp_wav_path = tmp.name
+                scipy.io.wavfile.write(
+                    tmp_wav_path,
+                    self._model.sample_rate,
+                    audio.numpy(),
+                )
+
+            try:
+                sound = AudioSegment.from_wav(tmp_wav_path)
+                sound.export(self._output_path, format="mp3")
+                logger.info(f"TTS audio saved to {self._output_path}")
+            finally:
+                os.remove(tmp_wav_path)
+
         except Exception as e:
             logger.error(f"Pocket TTS error: {e}")
             raise TTSServiceError(

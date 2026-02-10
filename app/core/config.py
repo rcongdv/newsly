@@ -47,8 +47,8 @@ class Settings(BaseSettings):
 
     # ============ TTS Provider Selection ============
     tts_provider: str = "elevenlabs"  # "elevenlabs" or "pocket_tts"
-    tts_output_format: str = "mp3"
     tts_output_file: str = "output"
+    tts_output_format: str = "mp3"
 
     # ============ TTS (ElevenLabs) ============
     elevenlabs_api_key: str = ""
