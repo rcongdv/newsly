@@ -37,10 +37,7 @@ class GeminiService:
         self._client = genai.Client(api_key=api_key)
 
         # Load system prompt once at initialization
-        prompt_path = (
-            system_prompt_path
-            or Path(__file__).parent.parent.parent / "ai" / "system_prompt.md"
-        )
+        prompt_path = system_prompt_path or Path(__file__).parent / "system_prompt.md"
         if prompt_path.exists():
             self._system_prompt = prompt_path.read_text().strip()
         else:
