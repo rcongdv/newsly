@@ -45,12 +45,18 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.0-flash"
 
-    # ============ TTS (ElevenLabs) ============
+    # ============ TTS Provider Selection ============
+    tts_provider: str = "elevenlabs"  # "elevenlabs" or "pocket_tts"
     tts_output_format: str = "mp3"
     tts_output_file: str = "output"
-    elevenlabs_api_key: str
+
+    # ============ TTS (ElevenLabs) ============
+    elevenlabs_api_key: str = ""
     elevenlabs_voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
     elevenlabs_model_id: str = "eleven_flash_v2_5"
+
+    # ============ TTS (Pocket TTS) ============
+    pocket_tts_voice: str = "alba"
 
     # ============ Video Generation ============
     video_enabled: bool = True

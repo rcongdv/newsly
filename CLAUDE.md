@@ -6,7 +6,7 @@ Newsletter-to-audio service. Fetches emails from Gmail, summarizes with AI (Grok
 
 - Python 3.12, FastAPI, async SQLAlchemy with PostgreSQL
 - AI: Grok (xai_sdk) or Gemini (google-genai) for summarization
-- TTS: ElevenLabs
+- TTS: ElevenLabs or Pocket TTS (local/CPU-based)
 - Video: FFmpeg with burned-in subtitles (optional)
 - Gmail API for email fetch/send
 - Deployed on Fly.io
@@ -21,7 +21,7 @@ app/
 ├── integrations/
 │   ├── gmail/           # Gmail API client
 │   ├── ai/              # AI services (Grok, Gemini) with factory
-│   ├── tts/             # ElevenLabs TTS service
+│   ├── tts/             # TTS services (ElevenLabs, Pocket TTS) with factory
 │   └── video/           # Video generation with subtitles (ffmpeg)
 ├── schemas/             # Pydantic request/response models
 ├── services/            # Business logic (summary_generator.py)
@@ -30,7 +30,7 @@ app/
 
 ## Patterns
 
-- **Factory pattern** for AI service (`AIFactory.create()`) and video service (`VideoFactory.create()`)
+- **Factory pattern** for AI service (`AIFactory.create()`), TTS service (`TTSFactory.create()`), and video service (`VideoFactory.create()`)
 - **Repository pattern** for database access (`EmailRepository`)
 - **Dependency injection** via FastAPI's `Depends()`
 - **Protocol classes** for TTS and video service interfaces
@@ -48,7 +48,7 @@ uvicorn app.main:app --reload --port 8000
 ## Tests
 
 ```bash
-pytest tests/ -v
+python -m pytest tests/ -v
 ```
 
 All tests use mocks - no external services needed.
@@ -71,7 +71,7 @@ All tests use mocks - no external services needed.
 
 ## Notes
 
-- **TTS**: Uses ElevenLabs for high-quality text-to-speech with word-level timing for subtitles.
+- **TTS**: Uses ElevenLabs for high-quality text-to-speech with word-level timing for subtitles. Pocket TTS is available as a local/CPU-based alternative (no API key required, but no word-level timing).
 - **Video generation**: Optional feature that creates MP4 with burned-in subtitles. Enable with `VIDEO_ENABLED=true`. Uses FFmpeg (already in Dockerfile).
 - Database uses asyncpg with connection pooling (PGBouncer compatible).
 - Gmail uses OAuth2 with refresh tokens. Run `scripts/generate_refresh_token.py` to get one.
@@ -125,9 +125,19 @@ All tests use mocks - no external services needed.
 - Ensure concurrency safety: create new model instance per `summarize()` call
 
 ### TTS Configuration
-- ElevenLabs is the sole TTS provider
-- Configure via `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` env vars
-- Service provides word-level timing data for subtitle generation
+- Supports ElevenLabs and Pocket TTS providers via `TTS_PROVIDER` env var ("elevenlabs" or "pocket_tts")
+- Factory pattern: `TTSFactory.create(settings)` returns the configured provider
+- Both providers implement the `TTSService` protocol from `app/integrations/tts/base.py`
+- Key files: `app/integrations/tts/elevenlabs.py`, `app/integrations/tts/pocket_tts.py`, `app/integrations/tts/factory.py`
+- ElevenLabs config: `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID`
+- Pocket TTS config: `POCKET_TTS_VOICE` (built-in voice name like "alba" or file path/URL)
+- ElevenLabs provides word-level timing data for subtitle generation; Pocket TTS does not (word_timings returns [])
+
+### Adding New TTS Providers
+- Implement the `TTSService` protocol from `app/integrations/tts/base.py`
+- Add factory function: `create_<provider>_service(settings)`
+- Register in `TTSFactory.create()` method
+- Include corresponding tests following `test_elevenlabs.py` patterns
 
 ### Adding New Video Providers
 - Implement the `VideoService` protocol from `app/integrations/video/base.py`

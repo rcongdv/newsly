@@ -16,7 +16,8 @@ from app.db.repositories.email import EmailRepository
 from app.integrations.gmail.client import GmailClient, create_gmail_client
 from app.integrations.ai.base import AIService
 from app.integrations.ai.factory import AIFactory
-from app.integrations.tts.elevenlabs import ElevenLabsService, create_elevenlabs_service
+from app.integrations.tts.base import TTSService
+from app.integrations.tts.factory import TTSFactory
 from app.integrations.video.base import VideoService
 from app.integrations.video.factory import VideoFactory
 from app.services.email_processor import EmailProcessorService
@@ -61,7 +62,9 @@ def _verify_oidc_token(token: str, settings: Settings) -> bool:
         if email == settings.pubsub_service_account_email:
             return True
 
-        logger.warning(f"OIDC token email mismatch: expected {settings.pubsub_service_account_email}, got {email}")
+        logger.warning(
+            f"OIDC token email mismatch: expected {settings.pubsub_service_account_email}, got {email}"
+        )
         return False
 
     except Exception as e:
@@ -144,12 +147,15 @@ def get_ai_service(settings: SettingsDep) -> AIService:
 AIServiceDep = Annotated[AIService, Depends(get_ai_service)]
 
 
-def get_tts_service(settings: SettingsDep) -> ElevenLabsService:
-    """Get TTS service instance."""
-    return create_elevenlabs_service(settings)
+def get_tts_service(settings: SettingsDep) -> TTSService:
+    """Get TTS service instance.
+
+    Uses TTSFactory to select provider based on settings.tts_provider.
+    """
+    return TTSFactory.create(settings)
 
 
-TTSServiceDep = Annotated[ElevenLabsService, Depends(get_tts_service)]
+TTSServiceDep = Annotated[TTSService, Depends(get_tts_service)]
 
 
 def get_video_service(settings: SettingsDep) -> VideoService | None:

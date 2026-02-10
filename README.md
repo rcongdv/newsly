@@ -29,11 +29,17 @@ The API runs on `http://localhost:8000`.
 - `GROK_API_KEY` - Your X.AI API key
 - `GROK_MODEL` - Model to use (defaults to latest)
 
+**TTS Provider:**
+- `TTS_PROVIDER` - TTS provider to use: `elevenlabs` (default) or `pocket_tts`
+- `TTS_OUTPUT_FORMAT` - `mp3`, `wav`, etc.
+
 **TTS (ElevenLabs):**
-- `ELEVENLABS_API_KEY` - Your ElevenLabs API key (required)
+- `ELEVENLABS_API_KEY` - Your ElevenLabs API key (required when using ElevenLabs)
 - `ELEVENLABS_VOICE_ID` - Voice ID to use (default: `JBFqnCBsd6RMkjVDRZzb`)
 - `ELEVENLABS_MODEL_ID` - Model to use (default: `eleven_multilingual_v2`)
-- `TTS_OUTPUT_FORMAT` - `mp3`, `wav`, etc.
+
+**TTS (Pocket TTS) - local/CPU-based, no API key required:**
+- `POCKET_TTS_VOICE` - Built-in voice name (e.g. `alba`, `marius`) or path/URL to a voice file (default: `alba`)
 
 **Video Generation (Optional):**
 - `VIDEO_ENABLED` - Set to `true` to generate MP4 videos with subtitles (default: `false`)
@@ -101,7 +107,7 @@ app/
 ├── integrations/       # External services
 │   ├── gmail/          # Gmail API client
 │   ├── ai/             # Grok summarization
-│   ├── tts/            # Text-to-speech (ElevenLabs)
+│   ├── tts/            # Text-to-speech (ElevenLabs, Pocket TTS)
 │   └── video/          # Video generation with subtitles (FFmpeg)
 ├── schemas/            # Pydantic models
 └── services/           # Business logic

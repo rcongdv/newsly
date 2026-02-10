@@ -17,6 +17,8 @@ os.environ.update(
         "GEMINI_API_KEY": "test-gemini-key",
         "DATABASE_URL": "postgresql+asyncpg://user:pass@localhost/testdb",
         "ELEVENLABS_API_KEY": "test-elevenlabs-key",
+        "TTS_PROVIDER": "elevenlabs",
+        "POCKET_TTS_VOICE": "alba",
         "API_KEY": "test-api-key-12345",
         "VIDEO_ENABLED": "true",
         "VIDEO_WIDTH": "1080",
