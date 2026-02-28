@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+source venv/bin/activate
+
 set -euo pipefail
 
 SCRIPT_DIR="$(dirname "$0")"
